@@ -1,0 +1,118 @@
+(ns georepl.draw-primitives
+  (:require [clojure.core.match :refer [match]]
+            [quil.core :as quil]
+            [georepl.mathlib :as math]
+            [quil.middleware :as m]))
+
+
+;;
+;; primitives
+;;
+(defn draw-text [s top-left bottom-right]
+  (quil/text s (first top-left)
+               (second top-left)
+               (first bottom-right)
+               (second bottom-right)))
+
+
+(defn text-height
+  [height]
+  (quil/text-size height))
+
+
+(defn text-width
+  [coll]
+  (reduce max (map quil/text-width coll)))
+
+
+(defn draw-point
+  ([p]
+    (when-not (and (coll? p) (>= (count p) 2))
+      (throw (ex-info "argument p must be two- or higher dimensional vector" {:p p :f draw-point})))
+    (quil/ellipse (first p) (second p) 4 4))
+  ([p colour]
+    (if (coll? colour)
+      (do
+        (apply quil/fill colour)
+        (draw-point p)
+        (quil/no-fill))
+      (draw-point p [204 102 0])))
+  ([p colour size]
+    (do
+      (apply quil/fill colour)
+      (quil/ellipse (first p) (second p) size size)
+      (quil/no-fill))))
+
+
+(defn draw-line [p q]
+ (quil/line (first p)
+            (second p)
+            (first q)
+            (second q)))
+
+
+(defn draw-arc [p-center radius angle-start angle-end]
+  (let [diam (* radius 2)
+        ang2 (if (< angle-start angle-end)
+               angle-end
+               (+ math/TWO-PI angle-end))]
+    (quil/arc (first p-center)
+              (second p-center)
+              diam
+              diam
+              angle-start
+              ang2)))
+
+
+(defn draw-circle [p-center radius]
+  (let [diam (* radius 2)]
+    (quil/ellipse (first p-center)
+                  (second p-center)
+                  diam
+                  diam)))
+
+
+(defn draw-contour[points]
+  (when (>= (count points) 2)
+    (doseq [[p q] (map list points (rest points))]
+      (draw-line p q))))
+
+
+(defn draw-element [elem]
+  (case (:type elem)
+    :point   (draw-point (:p elem))
+    :line    (let [p (:p1 elem)
+                   q (:p2 elem)]
+               (draw-line (:p1 elem) (:p2 elem)))
+    :arc     (do
+;              (draw-point (:p-center elem) [250 0 0] 8)  ; red
+;              (draw-point (:p-start elem) [0 250 0] 8)   ; green
+;              (draw-point (:p-end elem) [0 0 250] 8)     ; blue
+              (draw-arc (:p-center elem)
+                        (:radius elem)
+                        (math/angle (math/difference (:p-center elem) (:p-start elem)))
+                        (math/angle (math/difference (:p-center elem) (:p-end elem)))))
+    :circle  (draw-circle (:p-center elem) (:radius elem))
+    :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
+    :contour (draw-contour (:p-list elem))
+             (when-let [params (:params elem)]
+               (if (= (count params) 1)
+                 (draw-point (first params))
+                 (draw-contour params)))))
+
+
+
+(defn draw-text-vec[ask-vec]
+  (let [e (first ask-vec)
+        pnt-tl (:p1 e)
+        pnt-br (:p2 e)]
+  (quil/text-size (- (second pnt-br)(second pnt-tl)))
+  (doseq [e ask-vec]
+    (do
+      (apply quil/fill
+             (if (pos? (:val e))
+               [204 102 0]
+               [50 0 0]))
+      (draw-text (:s e) (:p1 e) (:p2 e))
+  (quil/no-fill)))))
+
