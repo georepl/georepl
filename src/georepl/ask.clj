@@ -7,23 +7,6 @@
 
 ;; ask structure (context dialog)
 ;;
-(comment
-(defn point-in-box?
-  [p q1 q2]
-    (not-any? false? (map <= q1 p q2)))
-
-(defn select-point
-  [p ask-coll]
-     (if (nil? p)
-       nil
-       (if-let [e (first
-                    (drop-while
-                     #(not (point-in-box? p (first %) (second %)))
-                     ask-coll))]
-         (last e)
-         nil)))
-)
-
 ;;<string> <f> --> [<top-left> <bottom-right> <string> <f>]
 (defn ask
   [[x y] ask-coll]
@@ -44,7 +27,9 @@
 
 (defn up [coll]
   "scroll up the selection"
-  (map #(assoc % :val (:val %2))  coll (rest (cycle coll))))
+  (map #(assoc % :val (:val %2))
+       coll
+       (rest (cycle coll))))
 
 
 (defn down [coll]
@@ -63,9 +48,9 @@
   [key ask-coll]
     (case key
           :up     (let [coll (up ask-coll)]
-                    [coll nil])
+                    [coll (get-elem coll)])
           :down   (let [coll (down ask-coll)]
-                    [coll nil])
+                    [coll (get-elem coll)])
           :ok     [ask-coll (get-elem ask-coll)]
                   [ask-coll nil]))
 

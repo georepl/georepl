@@ -74,3 +74,4 @@
   [elem p]
 (println "Elem:" elem " P:" p)
   (assoc elem :refpoint p))
+

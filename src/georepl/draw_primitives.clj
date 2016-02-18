@@ -5,6 +5,13 @@
             [quil.middleware :as m]))
 
 
+(def colours {:orange [204 102 0]
+              :red [250 0 0]
+              :green [0 250 0]
+              :blue [0 0 250]
+              :black [0 0 0]
+              :white [255 255 255]})
+
 ;;
 ;; primitives
 ;;
@@ -78,27 +85,31 @@
       (draw-line p q))))
 
 
-(defn draw-element [elem]
-  (case (:type elem)
-    :point   (draw-point (:p elem))
-    :line    (let [p (:p1 elem)
-                   q (:p2 elem)]
-               (draw-line (:p1 elem) (:p2 elem)))
-    :arc     (do
-;              (draw-point (:p-center elem) [250 0 0] 8)  ; red
-;              (draw-point (:p-start elem) [0 250 0] 8)   ; green
-;              (draw-point (:p-end elem) [0 0 250] 8)     ; blue
-              (draw-arc (:p-center elem)
-                        (:radius elem)
-                        (math/angle (math/difference (:p-center elem) (:p-start elem)))
-                        (math/angle (math/difference (:p-center elem) (:p-end elem)))))
-    :circle  (draw-circle (:p-center elem) (:radius elem))
-    :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
-    :contour (draw-contour (:p-list elem))
-             (when-let [params (:params elem)]
-               (if (= (count params) 1)
-                 (draw-point (first params))
-                 (draw-contour params)))))
+(defn draw-element
+  ([elem]
+    (case (:type elem)
+      :point   (draw-point (:p elem))
+      :line    (let [p (:p1 elem)
+                     q (:p2 elem)]
+                 (draw-line (:p1 elem) (:p2 elem)))
+      :arc     (do
+                (draw-arc (:p-center elem)
+                          (:radius elem)
+                          (math/angle (math/difference (:p-center elem) (:p-start elem)))
+                          (math/angle (math/difference (:p-center elem) (:p-end elem)))))
+      :circle  (draw-circle (:p-center elem) (:radius elem))
+      :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
+      :contour (draw-contour (:p-list elem))
+               (when-let [params (:params elem)]
+                 (if (= (count params) 1)
+                   (draw-point (first params))
+                   (draw-contour params)))))
+  ([elem colour]
+    (when-let [colvec (colour colours)]
+      (when (coll? colvec)
+        (apply quil/stroke colvec)))
+    (draw-element elem)
+    (apply quil/stroke (:black colours))))
 
 
 

@@ -1,17 +1,12 @@
 (ns georepl.mathlib)
 
 
-(def Eps 0.00001)  ; smallest possible float to prevent division-by-zero!
+(def EPS 0.00001)  ; smallest possible float to prevent division-by-zero!
 (def PI Math/PI)
 (def TWO-PI (* 2 Math/PI))
 
-;(defn abs[x] (Math/abs x))
-(defn abs
-  [x]
-  (if (pos? x)
-    x
-    (* -1 x)))
 
+(defn abs[x] (Math/abs x))
 (defn sq[x] (* x x))
 (defn sqrt[x] (Math/sqrt x))
 (defn acos[x] (Math/acos x))
@@ -19,15 +14,20 @@
 (defn cos[x] (Math/cos x))
 (defn sin[x] (Math/sin x))
 
-(defn is-zero?
-  [x]
-  (< -0.0001 x 0.0001))
+(defn nearly-zero?
+  ([x epsilon]
+    (let [eps (abs epsilon)]
+      (if (zero? eps)
+        (nearly-zero? x)
+        (< (* -1.0 eps) x eps))))
+  ([x]
+    (nearly-zero? x EPS)))
 
 (defn equals?
   ([x y]
     (if (and (coll? x)(coll? y))
-      (is-zero? (reduce + (map (comp #(if (pos? %) % (* -1 %)) -) x y)))
-      (is-zero? (- x y))))
+      (nearly-zero? (reduce + (map (comp #(if (pos? %) % (* -1 %)) -) x y)))
+      (nearly-zero? (- x y))))
   ([x y & more]
     (and (equals? x y)
       (if (next more)
@@ -63,7 +63,7 @@
 (defn angle
   ([v]
    (let [len (length v)]
-     (if (is-zero? len)
+     (if (nearly-zero? len)
        nil
        (if (>= (/ (second v) len) 0)
          (acos (/ (first v) len))
@@ -80,7 +80,7 @@
 (defn angle-dir
   ([v w]
     (let [len (* (length v)(length w))]
-      (if (is-zero? len)
+      (if (nearly-zero? len)
         nil
         (acos (/ (dot-product v w) len)))))
   ([v]
@@ -171,7 +171,7 @@
   [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
   (let [divisor (- (* (- y4 y3)(- x2 x1))
                    (* (- y2 y1)(- x4 x3)))]
-    (if (is-zero? divisor)
+    (if (nearly-zero? divisor)
       nil
       [(/ (- (* (- x4 x3)
                 (- (* x2 y1) (* x1 y2)))
@@ -210,8 +210,21 @@
 
 (defn disjoin-plus-minus
   [coll]
-  (let [cl (filter (comp not zero?) coll)]
+  (let [cl (filter (comp not nearly-zero?) coll)]
     (if (empty? cl)
       [[0] [0]]
       [(filter pos? cl) (filter neg? cl)])))
 
+
+(defn proximity
+  [coll delta]
+  (let [x-min (reduce min (map first coll))
+        x-max (reduce max (map first coll))
+        y-min (reduce min (map last  coll))
+        y-max (reduce max (map last  coll))]
+    (if (or
+          (> (- x-max x-min) delta)
+          (> (- y-max y-min) delta))
+      nil
+      [(/ (+ x-max x-min) 2)
+       (/ (+ y-max y-min) 2)])))

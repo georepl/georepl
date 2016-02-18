@@ -33,6 +33,17 @@
          (max 1 (math/abs (timestamp v)))))))
 
 
+(defn catch-point
+  [trace]
+  (if (and
+        (> (count trace) 0)
+        (> (- (timestamp (first trace))
+              (timestamp (last trace)))
+           catch-duration))
+    (math/proximity (map coordinates trace) short-range)
+    nil))
+
+
 ; take a random subset of the contour including start and end points in order to avoid pixel-driven Manhattan geometry
 (defn distribute-points
   [coll]
@@ -98,7 +109,7 @@
      (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
        (if (> (dash-velocity elm-list) dash-speed)
          {:type :dashed}
-         (shapes/constructLine (first elems) (last elems)))
+         (shapes/constructLine (last elems) (first elems)))
        (if (< curve-ratio 0.25)
          (let [xmin (reduce min (map first elems))
                ymin (reduce min (map second elems))

@@ -14,6 +14,8 @@
 (defn setup []
   (quil/background 255)
   (quil/no-fill)
+
+;; reduced frame rate for testing purposes
 (quil/frame-rate 5)
 
   ; initial state
@@ -25,9 +27,10 @@
   (paint/draw state))
 
 (defn key-pressed [state key]
-  (if (= (:key-code key) 10)
-    (paint/key-pressed state :ok)
-    (paint/key-pressed state (:key key))))
+  (case (:key-code key)
+    10  (paint/key-pressed state :ok)
+    27  (paint/key-pressed state :esc)
+        (paint/key-pressed state (:key key))))
 
 ;;
 ;; main
@@ -46,5 +49,5 @@
     :middleware [m/fun-mode])
   nil)
 
-(init-frame)
+
 

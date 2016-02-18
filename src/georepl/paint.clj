@@ -34,7 +34,7 @@
   (picked [this])
   (caught [this])
   (dragged [this])
-  (moving [this])
+  (moved [this])
   (update-frame [this]))
 
 
@@ -117,7 +117,7 @@
                    (reset-state (->Asking (last trace)
                                           fact)))))
 
-  (moving [this]
+  (moved [this]
     (if (> (count trace) 2)
       (assoc this :show-trace? true)
       this))
@@ -131,13 +131,13 @@
              [1 _]     (if (catch-time-exceeded? (freehand/timestamp (butlast (first trace)))
                                                  (System/currentTimeMillis))
                          (caught this)
-                         (moving this))
+                         (moved this))
              [2 false] (if (catch-time-exceeded? (freehand/timestamp (butlast (last trace)))
                                                  (freehand/timestamp (butlast (first trace))))
                          (caught this)
-                         (moving this))
+                         (moved this))
              [_ true]  (dragged this)
-             :else     (moving this)))))
+             :else     (moved this)))))
 
 
 
@@ -148,42 +148,27 @@
 (defn modify [state]
   state)
 
+(defn next-point-on-element
+  [coll p]
+  (first
+    (sort #(compare (last %1)(last %2))
+      (map #(shapes/next-point % p) coll))))
 
 
 (defrecord Asking [p-cur factory] IState
   (reset-state [this]
    (-> this
       (assoc :p-cur p-cur
-             :f-cur nil
+             :f-cur (shapesFactory/initial-question (:factory this))
              :question (ask/ask p-cur (shapesFactory/current-question (:factory this)))
              :factory factory
-             :picked? false
-             :dragged? false)))
-
-
-
-  (update-frame [this]
-    (let [fact (:factory this)
-          e (shapesFactory/current-element fact)
-          p (:p-cur this)
-          f (:f-cur this)
-          state (picked this)]
-      (if-not (or (nil? f)(nil? p)(nil? fact))
-        (assoc state :factory (f fact p)
-                     :f-cur nil)
-        (if-not (:complete? (:factory state))
-          (dragged state)
-          (do
-            (shapesFactory/finish (:factory state))
-            (reset-state (->Drawing '()
-                                    false
-                                    false)))))))
+             :user-has? :done-nothing)))
 
 
 
   (draw-temporary [this]
     (when-let [e (shapesFactory/current-element factory)]
-      (dp/draw-element e)
+      (dp/draw-element e :orange)
       (dp/draw-point (:p-ref e) :orange))
     (when-let [sl (:question this)]
       (dp/draw-text-vec sl))
@@ -191,59 +176,109 @@
 
 
   (mouse-pressed [this event]
-    this)
+(println "mouse-pressed")
+    (assoc this :p-cur [(:x event)(:y event)]
+                :user-has? :dragged
+                :trace [[(:x event)(:y event)(System/currentTimeMillis)]]))
 
 
   (mouse-released [this event]
-    (assoc this :p-cur [(:x event)(:y event)]
-                :picked? true
-                :dragged? false))
+    (let [p (freehand/catch-point (cons [(:x event)(:y event)(System/currentTimeMillis)] (:trace this)))]
+      (if (nil? p)
+        (assoc this :p-cur [(:x event)(:y event)]
+                    :user-has? (if (:user-has :dragged) :dragged :picked)
+                    :trace [])
+        (caught (assoc this :p-cur p
+                            :user-has? :picked
+                            :trace [])))))
 
 
   (mouse-dragged [this event]
+(println "mouse-dragged")
+;(println "mouse-dragged:" (:trace this))
     (assoc this :p-cur [(:x event)(:y event)]
-                :picked? false
-                :dragged? true))
+                :user-has? :picked
+                :trace (cons [(:x event)(:y event)(System/currentTimeMillis)] (:trace this))))
 
 
   (mouse-moved [this event]
     (assoc this :p-cur [(:x event)(:y event)]
-                :picked? false
-                :dragged? false))
+                :user-has? :moved))
 
   (key-pressed [this key]
-    (let [ret (ask/key-pressed key (:question this))]
-      (let [state (assoc this :question (first ret))]
-        (if (nil? (second ret))
-          state
-          (let [e (second ret)
-                f (:f e)]
-(println "E:" e)
-            (case (:type e)
-              :immediate   (assoc state :factory ((:f e) (:factory state) (:p-cur state)))
-              :next-input  (let [p (:p-ref (shapesFactory/current-element e))]
-(println "P:" p)
-                             (assoc state :f-cur (:f e) :p-cur p))
-                           state))))))
+    (let [ret (ask/key-pressed key (:question this))
+          state (assoc this :question (first ret))]
+      (if (nil? (second ret))
+        state
+        (let [quest (second ret)
+              fact (:factory state)
+              e (shapesFactory/current-element fact)]
+          (case (:type quest)
+            :immediate   (assoc state :factory ((:f quest) fact (:p-cur state)))
+            :next-input  (let [p (:p-ref e)]
+(println "State: " state)
+                           (assoc state :f-cur (:f quest) :p-cur p))
+                         state)))))
 
 
   (picked [this]
-    (if (and (:picked? this) (not (nil? (:f-cur this))))
-      (assoc this :factory ((:f-cur this) (:factory this) (:p-cur this))
-                  :f-cur nil)
-      this))
+    (if (nil? (:f-cur this))
+      this
+      (if-let [fact ((:f-cur this) (:factory this) (:p-cur this))]
+        (if (= fact (:factory this))
+          this
+          (assoc this :factory fact
+                      :f-cur nil)))))
+
 
 
   (caught [this]
-    this)
+;(println "NPOE:" (next-point-on-element (elements/list-elems) (:p-cur this)))
+    (if-let [[elem p d] (next-point-on-element (elements/list-elems) (:p-cur this))]
+      (assoc-in
+       (assoc this :p-cur p)
+       [:factory :complete?] true)
+      this))
 
 
   (dragged [this]
+;(println "Dragged" (:f-cur this)(:p-cur this))
     (if-not (nil? (:p-cur this))
       (assoc this :factory (shapesFactory/refresh
                              (:factory this)
                              (:p-cur this)))
-        this)))
+      this))
+
+
+  (moved [this]
+;(println "Moved")
+    (if-not (nil? (:p-cur this))
+      (assoc this :factory (shapesFactory/refresh
+                             (:factory this)
+                             (:p-cur this)))
+      this))
+
+  (update-frame [this]
+    (let [fact (:factory this)
+          e (shapesFactory/current-element fact)
+          p (:p-cur this)
+          f (:f-cur this)
+          state (case (:user-has? this)
+                       :picked   (picked this)
+                       :dragged  (dragged this)
+                       :moved    (moved this)
+                                 this)]
+        (if-not (:complete? (:factory state))
+          state
+          (let [shape (shapesFactory/finish (:factory state))]
+            (if (= shape :line)    ;; in case of polygone mode: continue line drawing; consider points!
+              (let [elem (shapes/constructLine (:p-cur this)(:p-cur this))
+                    fact (shapesFactory/createShapeFactory elem)]
+                 (reset-state (->Asking (:p-cur this)
+                                          fact)))
+              (reset-state (->Drawing '()
+                                      false
+                                      false))))))))
 
 ;;
 ;;

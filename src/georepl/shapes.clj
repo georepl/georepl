@@ -5,6 +5,7 @@
 
 (defprotocol IShape
   (construct [this])
+  (next-point [this p])
   (translate[this v])
   (rotate[this angle])
   (scale[this factor]))
@@ -19,6 +20,9 @@
              :visible 1
              :p-ref p
              :p p)))
+
+  (next-point [this p]
+    [this (:p this) (math/dist p (:p this))])
 
   (translate [this v]
     (let [q (math/add-vec (:p this) v)]
@@ -47,6 +51,13 @@
              :p1 p1
              :p2 p2)))
 
+  (next-point [this p]
+    (let [l1 (math/dist p (:p1 this))
+          l2 (math/dist p (:p2 this))]
+      (if (< l1 l2)
+        [this (:p1 this) l1]
+        [this (:p2 this) l2])))
+
   (translate [this v]
     (let [q (math/add-vec p1 v)]
       (assoc this :p1 q
@@ -73,6 +84,14 @@
              :p-ref p-center
              :p-center p-center
              :radius radius)))
+
+  (next-point [this p]
+    (let [l1 (math/dist p (:p-center this))
+          q  (math/project-point-onto-circle p p-center radius)
+          l2 (math/dist p q)]
+      (if (< l1 l2)
+        [this (:p-center this) l1]
+        [this q l2])))
 
   (translate [this v]
     (let [q (math/add-vec p-center v)]
@@ -103,6 +122,22 @@
              :radius radius
              :p-start p-start
              :p-end p-end)))
+
+
+  (next-point [this p]
+    (let [l1 (math/dist p (:p-center this))
+          l2 (math/dist p (:p-start this))
+          l3 (math/dist p (:p-end this))
+          q  (math/project-point-onto-circle p p-center radius)
+          l4 (if (math/right-from? q p-start p-end)
+               (math/dist p q)
+               (+ l1 l2 l3))]
+      (case (min l1 l2 l3 l4)
+        l1   [this (:p-center this) l1]
+        l2   [this (:p-start this) l2]
+        l3   [this (:p-end this) l3]
+        l4   [this q l4])))
+
 
   (translate [this v]
     (-> this
@@ -137,6 +172,11 @@
              :visible 1
              :p-ref (first p-list)
              :p-list (vec p-list))))
+
+  (next-point [this p]
+    (first
+      (sort #(compare (last %1)(last %2))
+        (map #(vec (list this % (math/dist p %))) (:p-list this)))))
 
   (translate [this v]
     (let [new-p-list (vec (map (partial math/add-vec v) p-list))]
