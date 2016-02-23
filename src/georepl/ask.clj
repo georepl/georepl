@@ -8,21 +8,20 @@
 ;; ask structure (context dialog)
 ;;
 ;;<string> <f> --> [<top-left> <bottom-right> <string> <f>]
-(defn ask
-  [[x y] ask-coll]
-    (when-not (empty? ask-coll)
-      (let [width (dp/text-width (map :s ask-coll))
-            x-l x
-            x-r (+ x-l width)
-            height 20]
-        (dp/text-height height)
-        (map #(conj {:p1 (vec (list x-l %))}
-                    [:p2 (vec (list x-r (+ % height)))]
-                    [:s (:s %2)]
-                    [:f (:f %2)]
-                    [:type (:type %2)]
-                    [:val (:val %2)])
-             (iterate (partial + height) y) ask-coll))))
+(defn ask [[x y] ask-coll]
+  (when-not (empty? ask-coll)
+    (let [width (dp/text-width (map :s ask-coll))
+          x-l x
+          x-r (+ x-l width)
+          height 20]
+      (dp/text-height height)
+      (map #(conj {:p1 (vec (list x-l %))}
+                  [:p2 (vec (list x-r (+ % height)))]
+                  [:s (:s %2)]
+                  [:f (:f %2)]
+                  [:type (:type %2)]
+                  [:val (:val %2)])
+           (iterate (partial + height) y) ask-coll))))
 
 
 (defn up [coll]

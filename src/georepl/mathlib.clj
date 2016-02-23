@@ -7,6 +7,7 @@
 
 
 (defn abs[x] (Math/abs x))
+(defn round[x] (Math/round (double x)))
 (defn sq[x] (* x x))
 (defn sqrt[x] (Math/sqrt x))
 (defn acos[x] (Math/acos x))
@@ -76,7 +77,6 @@
        (- phi psi)))))
 
 
-;direction angle ex [0 PI]
 (defn angle-dir
   ([v w]
     (let [len (* (length v)(length w))]
@@ -102,16 +102,6 @@
                p
                (/ radius
                   (dist p-center p)))))
-
-(defn round
-  [x]
-  (if (coll? x)
-    (map round x)
-    (let [trunc-x (int x)
-          dx (abs (- x trunc-x))]
-      (if (>= dx 0.5)
-        (+ trunc-x 1)
-        trunc-x))))
 
 (defn det
   [v w]

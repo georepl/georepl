@@ -7,20 +7,18 @@
 ;;
 (def short-range 5)
 ;(def medium-range 15)
-;(def catch-speed 0.1)
-(def catch-duration 1000)
+;(def snap-speed 0.1)
+(def snap-duration 1000)
 (def dash-speed 0.9)
 
 ;; helper functions
 ;;
 
-(defn timestamp
-  [p]
+(defn timestamp [p]
   (last p))
 
-(defn coordinates
-  [p]
-  (butlast p))
+(defn coordinates [p]
+  [(first p)(second p)])
 
 
 
@@ -33,13 +31,13 @@
          (max 1 (math/abs (timestamp v)))))))
 
 
-(defn catch-point
+(defn snap-point
   [trace]
   (if (and
         (> (count trace) 0)
         (> (- (timestamp (first trace))
               (timestamp (last trace)))
-           catch-duration))
+           snap-duration))
     (math/proximity (map coordinates trace) short-range)
     nil))
 
@@ -60,7 +58,7 @@
 (defn arc-segment
   [p-center radius elm-list]
     (let [[c1 c2] (split-at (int (/ (count elm-list) 2))
-                            (map butlast elm-list))
+                            (map coordinates elm-list))
           coll [(first c1)(last c1)(first c2)(last c2)]
           [p1 p2 p3 p4] (map #(math/project %
                                             p-center
@@ -74,10 +72,6 @@
           [p4 p1]))))
 
 
-
-;(defn arc-segment
-;  [p-center radius elm-list]
-;  (arc-segment_ [300 300] 100 [[400 300 42][390 345 42][390 390 42][345 390 42][300 400 42]]))
 
 ;; helpers (statistics)
 ;;
@@ -93,10 +87,9 @@
 
 ;; create geometric objects from drawn input
 ;;
-(defn analyze-freehand-shape
-  [elm-list]
+(defn analyze-shape [elm-list]
   (if (= (count elm-list) 2)
-    (shapes/constructPoint (butlast (first elm-list)))
+    (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
     (let [elems (dedupe (map coordinates (distribute-points elm-list)))
           v-diff  (map math/difference elems (rest elems))
           v-mean  (math/difference (first elems)(last elems))
@@ -122,12 +115,3 @@
                (shapes/constructCircle p-center radius)
                (shapes/constructArc p-center radius p-start p-end)))
          (shapes/constructContour elm-list))))))
-
-
-
-(defn analyze-shape
-  [dat type]
-  (case type
-;    :point       (shapes/constructPoint dat)
-    :catchpoint  (println "Catch Point " dat)
-    :contour     (analyze-freehand-shape dat)))
