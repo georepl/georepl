@@ -184,7 +184,45 @@
     (-> this
       (assoc :elem  elem
              :complete? false
-             :just-answered :none)))
+             :quector [{:s "pick center point"
+                        :f (fn[this p]
+                             (if-let [circle (:elem this)]
+                               (assoc this :elem (assoc circle :p-center p
+                                                               :p-ref p)
+                                           :quector (rest (:quector this))
+                                           :complete? (= (:just-answered this) :radius)
+                                           :just-answered :center)
+                               nil))
+                        :g (fn[this p]
+                             (let [v (math/difference (:p-center (:elem this)) p)
+                                   circle (shapes/translate (:elem this) v)]
+                               (assoc this :elem circle)))}
+                       {:s "define radius"
+                        :f (fn[this p]
+                             (if-let [circle (:elem this)]
+                               (assoc this :elem (assoc circle :radius (math/dist (:p-center circle) p)
+                                                               :p-ref (if (math/equals? (:p-center circle) p)
+                                                                        (math/add-vec p [(math/dist (:p-center circle) p)
+                                                                                         (second (:p-center circle))])
+                                                                        (math/project p
+                                                                                      (:p-center circle)
+                                                                                      (:radius circle))))
+                                           :quector (rest (:quector this))
+                                           :complete? (= (:just-answered this) :center)
+                                           :just-answered :radius)
+                               nil))
+                        :g (fn[this p]
+                             (let [factor (/ (math/dist (:p-center (:elem this)) p)
+                                             (max (:radius (:elem this)) math/EPS))
+                                   circle (shapes/scale (:elem this) factor)]
+                               (if-not (math/equals? p (:p-center (:elem this)))
+                                 (assoc this :elem circle)
+                                 this)))}
+                       {:s "define point on circle"
+                        :f (fn[this p]
+                             (assoc-in this [:elem :complete?] true))
+                        :g (fn[this p]
+                             this)}])))
 
 
   (refresh [this p]

@@ -31,17 +31,6 @@
          (max 1 (math/abs (timestamp v)))))))
 
 
-(defn snap-point
-  [trace]
-  (if (and
-        (> (count trace) 0)
-        (> (- (timestamp (first trace))
-              (timestamp (last trace)))
-           snap-duration))
-    (math/proximity (map coordinates trace) short-range)
-    nil))
-
-
 ; take a random subset of the contour including start and end points in order to avoid pixel-driven Manhattan geometry
 (defn distribute-points
   [coll]
@@ -88,30 +77,32 @@
 ;; create geometric objects from drawn input
 ;;
 (defn analyze-shape [elm-list]
-  (if (= (count elm-list) 2)
-    (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
-    (let [elems (dedupe (map coordinates (distribute-points elm-list)))
-          v-diff  (map math/difference elems (rest elems))
-          v-mean  (math/difference (first elems)(last elems))
-          angles  (map #(math/angle v-mean %) v-diff)
-          avg-an  (average angles)
-          bias-an (bias avg-an angles)
-          [c-pos c-neg] (math/disjoin-plus-minus (map math/det v-diff (rest v-diff)))
-          curve-ratio (float (/ (min (count c-pos) (count c-neg))
-                                (max (count c-pos) (count c-neg))))]
-     (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
-       (if (> (dash-velocity elm-list) dash-speed)
-         {:type :dashed}
-         (shapes/constructLine (last elems) (first elems)))
-       (if (< curve-ratio 0.25)
-         (let [xmin (reduce min (map first elems))
-               ymin (reduce min (map second elems))
-               xmax (reduce max (map first elems))
-               ymax (reduce max (map second elems))
-               p-center [(math/round (/ (+ xmax xmin) 2))(math/round (/ (+ ymax ymin) 2))]
-               radius (/ (+ (- xmax xmin)(- ymax ymin)) 4)
-               [p-start p-end] (arc-segment p-center radius elm-list)]
-           (if (math/equals? p-start p-end [0.0 0.0])
-               (shapes/constructCircle p-center radius)
-               (shapes/constructArc p-center radius p-start p-end)))
-         (shapes/constructContour elm-list))))))
+  (if (< (count elm-list) 2)
+    nil
+    (if (= (count elm-list) 2)
+      (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
+      (let [elems (dedupe (map coordinates (distribute-points elm-list)))
+            v-diff  (map math/difference elems (rest elems))
+            v-mean  (math/difference (first elems)(last elems))
+            angles  (map #(math/angle v-mean %) v-diff)
+            avg-an  (average angles)
+            bias-an (bias avg-an angles)
+            [c-pos c-neg] (math/disjoin-plus-minus (map math/det v-diff (rest v-diff)))
+            curve-ratio (float (/ (min (count c-pos) (count c-neg))
+                                  (max (count c-pos) (count c-neg))))]
+       (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
+         (if (> (dash-velocity elm-list) dash-speed)
+           (assoc (shapes/constructLine (last elems) (first elems)) :type :dashed)
+           (shapes/constructLine (last elems) (first elems)))
+         (if (< curve-ratio 0.25)
+           (let [xmin (reduce min (map first elems))
+                   ymin (reduce min (map second elems))
+                 xmax (reduce max (map first elems))
+                 ymax (reduce max (map second elems))
+                 p-center [(math/round (/ (+ xmax xmin) 2))(math/round (/ (+ ymax ymin) 2))]
+                 radius (/ (+ (- xmax xmin)(- ymax ymin)) 4)
+                 [p-start p-end] (arc-segment p-center radius elm-list)]
+             (if (math/equals? p-start p-end [0.0 0.0])
+                 (shapes/constructCircle p-center radius)
+                 (shapes/constructArc p-center radius p-start p-end)))
+           (shapes/constructContour elm-list)))))))
