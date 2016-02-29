@@ -35,28 +35,31 @@
         (equals? y (first more) (rest more))
         (equals? y (first more))))))
 
-(defn difference
-  [p q]
+(defn vec-sub [p q]
   (vec (map - q p)))
 
-(defn add-vec
-  [p q] (vec (map + q p)))
+(defn vec-add [p q]
+  (vec (map + q p)))
 
-(defn multiplicate-vec
-  [a v] (vec (map (partial * a) v)))
+(defn vec-scal-mult [a v]
+  (vec (map (partial * a) v)))
+
+(defn vec-ortho [v]
+  "return a vector which is orthogonal to the given vector v"
+  [(* -1.0 (second v)) (first v)])
 
 (defn length
   [p]
   (sqrt (reduce + (map * p p))))
 
 (defn dist [p q]
-  (length (difference p q)))
+  (length (vec-sub p q)))
 
 (defn scale-vec [p-fix p-var factor]
   "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
-  (add-vec p-fix
-           (multiplicate-vec factor
-                             (difference p-fix p-var))))
+  (vec-add p-fix
+           (vec-scal-mult factor
+                             (vec-sub p-fix p-var))))
 
 (defn dot-product [v w]
   (reduce + (map * v w)))
@@ -112,8 +115,8 @@
 (defn right-from?
   "is point q on the right-hand side of the line from p1 to p2?"
   ([p1 p2 q]
-    (let [v (difference p1 p2)
-          w (difference p1 q)]
+    (let [v (vec-sub p1 p2)
+          w (vec-sub p1 q)]
       (neg? (det v w))))
   ([[p1 p2] q]
     (right-from? p1 p2 q)))
@@ -127,8 +130,8 @@
 
 (defn project-point-onto-circle
   [p center-p radius]
-  (let [v (difference center-p p)]
-    (add-vec (multiplicate-vec (/ radius
+  (let [v (vec-sub center-p p)]
+    (vec-add (vec-scal-mult (/ radius
                                   (length v))
                                v)
              center-p)))
@@ -189,6 +192,19 @@
            [x y]
            nil)))))
 
+(defn circumcircle [a b c]
+  "return center and radius of the circumscribed circle of the triangle given as points a, b, c"
+  (let [v1 (vec-sub b a)
+        v2 (vec-sub b c)
+        p1 (vec-add b (vec-scal-mult 0.5 v1))
+        p2 (vec-add b (vec-scal-mult 0.5 v2))
+        q1 (vec-add p1 (vec-ortho v1))
+        q2 (vec-add p2 (vec-ortho v2))
+        center (intersect-lines [p1 q1][p2 q2])]
+    (if (nil? center)
+      nil
+      [center (dist b center)])))
+
 (defn our-round
   "Round a double to the given precision (number of significant digits)"
   [precision d]
@@ -198,6 +214,8 @@
 (defn oriented-curvature?[coll]
   (not (and (some neg? coll) (some pos? coll))))
 
+
+;;NYI: REFACTOR: delete
 (defn disjoin-plus-minus
   [coll]
   (let [cl (filter (comp not nearly-zero?) coll)]

@@ -25,7 +25,7 @@
     [this (:p this) (math/dist p (:p this))])
 
   (translate [this v]
-    (let [q (math/add-vec (:p this) v)]
+    (let [q (math/vec-add (:p this) v)]
       (assoc this :p q
                   :p-ref q)))
 
@@ -59,9 +59,9 @@
         [this (:p2 this) l2])))
 
   (translate [this v]
-    (let [q (math/add-vec p1 v)]
+    (let [q (math/vec-add p1 v)]
       (assoc this :p1 q
-                  :p2 (math/add-vec p2 v)
+                  :p2 (math/vec-add p2 v)
                   :p-ref q)))
 
   (rotate [this angle] this)
@@ -94,7 +94,7 @@
         [this q l2])))
 
   (translate [this v]
-    (let [q (math/add-vec p-center v)]
+    (let [q (math/vec-add p-center v)]
       (assoc this :p-center q
                   :p-ref q)))
 
@@ -117,34 +117,29 @@
     (-> this
       (assoc :type :arc
              :visible 1
-             :p-ref p-center
              :p-center p-center
              :radius radius
              :p-start p-start
-             :p-end p-end)))
+             :p-end p-end
+             :p-ref p-start)))
 
 
   (next-point [this p]
-    (let [l1 (math/dist p (:p-center this))
-          l2 (math/dist p (:p-start this))
-          l3 (math/dist p (:p-end this))
-          q  (math/project-point-onto-circle p p-center radius)
-          l4 (if (math/right-from? q p-start p-end)
-               (math/dist p q)
-               (+ l1 l2 l3))]
-      (case (min l1 l2 l3 l4)
-        l1   [this (:p-center this) l1]
-        l2   [this (:p-start this) l2]
-        l3   [this (:p-end this) l3]
-        l4   [this q l4])))
+    (let [q  (math/project-point-onto-circle p p-center radius)
+          c1 [(:p-center this)(:p-start this)(:p-end this)]
+          c2 (if (math/right-from? q p-start p-end)
+               (cons q c1)
+               c1)
+          nxt (first (sort-by (partial math/dist p) c2))]
+      [this nxt (math/dist p nxt)]))
 
 
   (translate [this v]
     (-> this
-      (assoc :p-center (math/add-vec p-center v)
-             :p-start (math/add-vec p-start v)
-             :p-end (math/add-vec p-end v)
-             :p-ref (math/add-vec (:p-ref this) v))))
+      (assoc :p-center (math/vec-add p-center v)
+             :p-start (math/vec-add p-start v)
+             :p-end (math/vec-add p-end v)
+             :p-ref (math/vec-add (:p-ref this) v))))
 
   (rotate [this angle]
     (-> this
@@ -179,13 +174,13 @@
         (map #(vec (list this % (math/dist p %))) (:p-list this)))))
 
   (translate [this v]
-    (let [new-p-list (vec (map (partial math/add-vec v) p-list))]
+    (let [new-p-list (vec (map (partial math/vec-add v) p-list))]
       (assoc this :p-list new-p-list
                   :p-ref (first new-p-list))))
 
   (rotate [this angle]
     (let [p-center (* 0.5
-                      (math/difference (first p-list)
+                      (math/vec-sub (first p-list)
                                        (last p-list)))]
       (assoc this :p-list
                   (vec (map math/rotate p-center p-list)))))

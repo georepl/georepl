@@ -26,7 +26,7 @@
   [trace]
   (if (< (count trace) 2)
     0.0
-    (let [v (math/difference (first trace)(last trace))]
+    (let [v (math/vec-sub (first trace)(last trace))]
       (/ (math/length (coordinates v))
          (max 1 (math/abs (timestamp v)))))))
 
@@ -82,12 +82,14 @@
     (if (= (count elm-list) 2)
       (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
       (let [elems (dedupe (map coordinates (distribute-points elm-list)))
-            v-diff  (map math/difference elems (rest elems))
-            v-mean  (math/difference (first elems)(last elems))
+            v-diff  (map math/vec-sub elems (rest elems))
+            v-mean  (math/vec-sub (first elems)(last elems))
             angles  (map #(math/angle v-mean %) v-diff)
             avg-an  (average angles)
             bias-an (bias avg-an angles)
             [c-pos c-neg] (math/disjoin-plus-minus (map math/det v-diff (rest v-diff)))
+
+;; NYI: REFACTOR: use something like curvature here
             curve-ratio (float (/ (min (count c-pos) (count c-neg))
                                   (max (count c-pos) (count c-neg))))]
        (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
