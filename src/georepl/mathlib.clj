@@ -4,6 +4,7 @@
 (def EPS 0.00001)  ; smallest possible float to prevent division-by-zero!
 (def PI Math/PI)
 (def TWO-PI (* 2 Math/PI))
+(def PI-HALF (/ Math/PI 2))
 
 
 (defn abs[x] (Math/abs x))
@@ -44,6 +45,12 @@
 (defn vec-scal-mult [a v]
   (vec (map (partial * a) v)))
 
+(defn vec-zero? [v]
+  (every? nearly-zero? v))
+
+(defn vec-equals? [v w]
+  (vec-zero? (map - v w)))
+
 (defn vec-ortho [v]
   "return a vector which is orthogonal to the given vector v"
   [(* -1.0 (second v)) (first v)])
@@ -55,7 +62,7 @@
 (defn dist [p q]
   (length (vec-sub p q)))
 
-(defn scale-vec [p-fix p-var factor]
+(defn vec-scale [p-fix p-var factor]
   "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
   (vec-add p-fix
            (vec-scal-mult factor
@@ -99,9 +106,11 @@
 
 (defn project
   [p p-center radius]
-  (if (equals? radius 0.0)
+  (if (or
+        (equals? radius 0.0)
+        (nearly-zero? (dist p p-center)))
     p-center
-    (scale-vec p-center
+    (vec-scale p-center
                p
                (/ radius
                   (dist p-center p)))))

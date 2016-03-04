@@ -69,8 +69,12 @@
   (scale [this factor] this))
 
 
-(defn constructLine [p1 p2]
-  (construct (->Line p1 p2)))
+(defn constructLine
+  ([p1 p2]
+    (construct (->Line p1 p2)))
+  ([p1 p2 visible]
+    (let [line (construct (->Line p1 p2))]
+      (assoc line :visible visible))))
 
 
 
@@ -149,8 +153,8 @@
 
   (scale [this factor]
     (assoc this :radius (* radius factor)
-                :p-start (math/scale-vec p-center p-start factor)
-                :p-end (math/scale-vec p-center p-end factor))))
+                :p-start (math/vec-scale p-center p-start factor)
+                :p-end (math/vec-scale p-center p-end factor))))
 
 
 (defn constructArc [p-center radius p-start p-end]

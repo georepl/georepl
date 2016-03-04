@@ -8,5 +8,5 @@
                  [thi.ng/math "0.1.4"]
                  [com.stuartsierra/component "0.3.1"]
                  [quil "2.2.6"]
-                 [lein-light-nrepl "0.2.0"]])
-
+                 [lein-light-nrepl "0.2.0"]]
+  :profiles {:dev {:plugins [[lein-cloverage "1.0.6"]]}})

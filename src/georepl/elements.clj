@@ -1,19 +1,19 @@
 (ns georepl.elements
-  (:require [georepl.mathlib :as math]))
-
+  (:require [georepl.mathlib :as math]
+            [clojure.java.io :as io]))
 
 (def elems (atom '()))
 
 
 ;; regular elements have visibility > 0
-;; compound elements or templates have no visibility of their own since they are displayed through their consistents
-;; elements in the making (on the workbench) have visibility < 0
+;; compound elements or templates have no visibility of their own since they;; elements in the making (on the workbench) have visibility < 0
 (defn list-elems
   []
   (filter #(> (:visible %) 0) @elems))
 ;  (filter #(pos? (:visible %)) @elems))
 
 
+;; TODO NYI: Deprecated???
 (defn list-bench
   []
   (filter #(neg? (:visible %)) @elems))
@@ -70,8 +70,19 @@
   (pop-elem))
 
 
-(defn translate-relative
-  [elem p]
-(println "Elem:" elem " P:" p)
-  (assoc elem :refpoint p))
+(defn write-file[name]
+  (with-open [wrtr (io/writer name)]
+    (loop [coll @elems]
+      (if (empty? coll)
+        nil
+       (do
+         (.write wrtr (prn-str (first coll)))
+         (recur (rest coll)))))))
 
+
+(defn read-file[name]
+  (with-open [rdr (io/reader name)]
+    (doseq [line (line-seq rdr)]
+      (println line)
+;;      (push-elem line)
+           )))

@@ -212,7 +212,7 @@
                                    p-c (:p-center (:elem this))
                                    factor (/ (math/dist p-s p)
                                              (math/dist p-s p-e))
-                                   new-p-c  (math/scale-vec p-s p-c factor)]
+                                   new-p-c  (math/vec-scale p-s p-c factor)]
                                (if-not (math/nearly-zero? factor)
                                  (assoc this :elem (shapes/constructArc
                                                      new-p-c
@@ -222,14 +222,19 @@
                                  this)))}
                        {:s "define point on circle"
                         :f (fn[this p]
-(prn "3rd f")
-                             (if-let [arc (:elem this)]
-                               (assoc this :elem (assoc arc :p-ref (math/project-point-onto-circle
-                                                                     p (:p-center arc) (:radius arc)))
-                                           :quector (rest (:quector this))
-                                           :complete? true
-                                           :just-answered :end)
-                               nil))
+                             (let [circle (math/circumcircle
+                                            (:p-start (:elem this))
+                                            p
+                                            (:p-end (:elem this)))]
+                               (if-let [arc (assoc (:elem this) :p-center (first circle)
+                                                                :radius (second circle))]
+                                 (assoc this :elem arc
+                                             :p-ref (math/project-point-onto-circle
+                                                      p (first circle)(second circle))
+                                             :quector (rest (:quector this))
+                                             :complete? true
+                                             :just-answered :onp)
+                                 nil)))
                         :g (fn[this p]
                              (let [p-s (:p-start (:elem this))
                                    p-e (:p-end (:elem this))
@@ -271,13 +276,33 @@
 ;;
 (defrecord ContourFactory[elem] IShapesFactory
   (create [this]
-    (assoc this :elem elem
-                :complete? false))
+    (-> this
+      (assoc :elem  elem
+             :complete? false
+             :quector [{:s "pick a trace"
+                        :f (fn[this p]
+                              (if-let [contour (:elem this)]
+                                (assoc this :elem (assoc contour :p-list (reverse (:p-list contour))
+                                                                 :p-ref (last (:p-list contour))
+                                                                 :complete? false))
+                                this))
+                        :g (fn[this p]
+                             (shapes/translate
+                               (:elem this)
+                                 (math/vec-sub (:p-ref (:elem this)) p)))}
+                       {:s "ok?"
+                        :f (fn[this p]
+                             (assoc this :complete? true))
+                        :g (fn[this p]
+                             (shapes/translate
+                               (:elem this)
+                                 (math/vec-sub (:p-ref (:elem this)) p)))}])))
+
 
   (refresh [this p]
-    (assoc this :elem (shapes/translate
-                       (:elem this)
-                       (math/vec-sub (:p-ref (:elem this)) p))))
+    (if-let [quector (first (:quector this))]
+      ((:g quector) this p)
+      this))
 
   (update-element [this elem]
     (assoc this :elem elem))
@@ -286,19 +311,9 @@
     (:elem this))
 
   (current-question[this]
-    [{:s "toggle reference point"
-      :f (fn[this p]
-           (if-let [contour (:elem this)]
-             (assoc this :elem (assoc contour :p-list (reverse (:p-list contour))
-                                              :p-ref (last (:p-list contour))
-                                              :complete? false))
-             this))
-      :type :immediate
-      :val 0}
-     {:s "ok?"
-      :f (fn[this p](assoc this :complete? true))
-      :type :immediate
-      :val 1}])
+    (if-let [quector (first (:quector this))]
+      (:f quector)
+      nil))
 
   (finish [this]
     (elements/push-elem (:elem this))

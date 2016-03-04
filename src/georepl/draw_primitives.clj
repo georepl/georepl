@@ -89,8 +89,7 @@
   ([elem]
     (case (:type elem)
       :point   (draw-point (:p elem))
-      :line    (let [p (:p1 elem)
-                     q (:p2 elem)]
+      :line    (when (= (:visible elem) 1)
                  (draw-line (:p1 elem) (:p2 elem)))
       :arc     (do
                 (draw-arc (:p-center elem)
@@ -99,7 +98,8 @@
                           (math/angle (math/vec-sub (:p-center elem) (:p-end elem)))))
       :circle  (draw-circle (:p-center elem) (:radius elem))
       :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
-      :contour (draw-contour (:p-list elem))
+      :contour (when (= (:visible elem) 1)
+                 (draw-contour (:p-list elem)))
                (when-let [params (:params elem)]
                  (if (= (count params) 1)
                    (draw-point (first params))

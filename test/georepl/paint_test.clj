@@ -5,5 +5,4 @@
 
 
 (deftest init-paint-test
-  (testing "init-frame"
-    (is (nil? (init-frame)))))
+  )

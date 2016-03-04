@@ -94,7 +94,7 @@
                                   (max (count c-pos) (count c-neg))))]
        (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
          (if (> (dash-velocity elm-list) dash-speed)
-           (assoc (shapes/constructLine (last elems) (first elems)) :type :dashed)
+           (assoc (shapes/constructLine (last elems) (first elems) 0) :type :dashed)
            (shapes/constructLine (last elems) (first elems)))
          (if (< curve-ratio 0.25)
            (let [xmin (reduce min (map first elems))
@@ -108,3 +108,4 @@
                  (shapes/constructCircle p-center radius)
                  (shapes/constructArc p-center radius p-start p-end)))
            (shapes/constructContour elm-list)))))))
+
