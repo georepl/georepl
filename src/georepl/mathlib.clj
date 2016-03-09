@@ -51,6 +51,9 @@
 (defn vec-equals? [v w]
   (vec-zero? (map - v w)))
 
+(defn vec-not-equals?[p q]
+  (not (vec-equals? p q)))
+
 (defn vec-ortho [v]
   "return a vector which is orthogonal to the given vector v"
   [(* -1.0 (second v)) (first v)])
@@ -64,9 +67,10 @@
 
 (defn vec-scale [p-fix p-var factor]
   "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
-  (vec-add p-fix
-           (vec-scal-mult factor
-                             (vec-sub p-fix p-var))))
+  (vec-add
+    p-fix
+    (vec-scal-mult factor
+      (vec-sub p-fix p-var))))
 
 (defn dot-product [v w]
   (reduce + (map * v w)))
@@ -97,12 +101,19 @@
     (angle v [1 0])))
 
 
-(defn rotate [p-center p angle]
+(defn vec-rotate-center [p angle]
   (let [c (cos angle)
         s (sin angle)
         [x y] p]
     (vec (list (- (* c x)(* s y))
                (+ (* c y)(* s x))))))
+
+(defn vec-rotate [p p-center angle]
+  (vec-add
+    p-center
+    (vec-rotate-center
+      (vec-sub p-center p)
+      angle)))
 
 (defn project
   [p p-center radius]

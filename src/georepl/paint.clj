@@ -106,8 +106,10 @@
     this)
 
   (key-pressed [this key]
-    this)
-
+    (case key
+      :save (elements/write-file "/home/thomas/Projekte/GeoRepl/georepl/test/georepl/testfiles/x.txt")
+      :shift  (assoc this :raw-traces true)
+              this))
 
   (picked [this]
     this)
@@ -243,9 +245,12 @@
           (case (:type quest)
             :immediate   (assoc state :factory ((:f quest) fact (:p-cur state)))
             :next-input  (let [p (:p-ref e)]
-(println "State: " state)
+(prn "State: " state)
                            (assoc state :f-cur (:f quest) :p-cur p))
                          state)))))
+
+
+
 
 
   (picked [this]

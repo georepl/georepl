@@ -284,19 +284,20 @@
                               (if-let [contour (:elem this)]
                                 (assoc this :elem (assoc contour :p-list (reverse (:p-list contour))
                                                                  :p-ref (last (:p-list contour))
-                                                                 :complete? false))
+                                                                 :complete? false)
+                                            :complete? true)
                                 this))
                         :g (fn[this p]
-                             (shapes/translate
-                               (:elem this)
-                                 (math/vec-sub (:p-ref (:elem this)) p)))}
+                             (assoc this :elem (shapes/translate
+                                                (:elem this)
+                                                (math/vec-sub (:p-ref (:elem this)) p))))}
                        {:s "ok?"
                         :f (fn[this p]
                              (assoc this :complete? true))
                         :g (fn[this p]
-                             (shapes/translate
-                               (:elem this)
-                                 (math/vec-sub (:p-ref (:elem this)) p)))}])))
+                             (assoc this :elem (shapes/translate
+                                                 (:elem this)
+                                                 (math/vec-sub (:p-ref (:elem this)) p))))}])))
 
 
   (refresh [this p]

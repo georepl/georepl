@@ -64,9 +64,21 @@
                   :p2 (math/vec-add p2 v)
                   :p-ref q)))
 
-  (rotate [this angle] this)
+  (rotate [this angle]
+    (let [p (math/vec-rotate (:p1 this) (:p-ref this) angle)
+          q (math/vec-rotate (:p2 this) (:p-ref this) angle)]
+      (assoc this :p1 p :p2 q :p-ref p)))
 
-  (scale [this factor] this))
+  (scale [this factor]
+    (let [p (math/vec-scale
+             (:p1 this)
+             (:p-ref this)
+             factor)
+          q (math/vec-scale
+             (:p2 this)
+             (:p-ref this)
+             factor)]
+      (assoc this :p1 p :p2 q))))
 
 
 (defn constructLine
@@ -102,10 +114,10 @@
       (assoc this :p-center q
                   :p-ref q)))
 
-  (rotate [this angle] this)
+  (rotate [this angle]
+    this)
 
   (scale [this factor]
-;(println "SHAPES/SCALE:" factor)
     (assoc this :radius (* (:radius this) factor))))
 
 
@@ -147,9 +159,9 @@
 
   (rotate [this angle]
     (-> this
-      (assoc :p-start (math/rotate p-center p-start  angle)
-             :p-end (math/rotate p-center p-end angle)
-             :p-ref (math/rotate p-center (:p-ref this) angle))))
+      (assoc :p-start (math/vec-rotate p-start p-center angle)
+             :p-end (math/vec-rotate p-end p-center angle)
+             :p-ref (math/vec-rotate (:p-ref this) p-center angle))))
 
   (scale [this factor]
     (assoc this :radius (* radius factor)
@@ -164,6 +176,11 @@
 
 ;; 'contour' basic shape
 ;;
+(defn linear-scale[factor coll]
+  (map #(math/vec-scal-mult
+         factor
+         (math/vec-sub %1 %2)) coll (rest coll)))
+
 (defrecord Contour [p-list] IShape
   (construct [this]
     (-> this
@@ -183,15 +200,19 @@
                   :p-ref (first new-p-list))))
 
   (rotate [this angle]
-    (let [p-center (* 0.5
-                      (math/vec-sub (first p-list)
-                                       (last p-list)))]
-      (assoc this :p-list
-                  (vec (map math/rotate p-center p-list)))))
+    (assoc this :p-list
+                (vec (map #(math/vec-rotate % (:p-ref this) angle) p-list))))
 
   (scale [this factor]
-    (assoc this :p-list
-                (vec (map (map (partial * factor)) p-list)))))
+    (let [[c1 c2] (split-with (partial math/vec-not-equals? (:p-ref this)) (:p-list this))
+           cls-l (linear-scale factor (cons (:p-ref this) (reverse c1)))
+           cls-r (linear-scale factor c2)]
+      (assoc this :p-list
+                  (concat
+                    (reverse (rest (reductions math/vec-add (:p-ref this) cls-l)))
+                    [(:p-ref this)]
+                    (rest (reductions math/vec-add (:p-ref this) cls-r)))))))
+
 
 (defn constructContour [p-list]
   (construct (->Contour p-list)))

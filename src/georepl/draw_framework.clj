@@ -16,7 +16,7 @@
   (quil/no-fill)
 
 ;; reduced frame rate for testing purposes
-(quil/frame-rate 10)
+(quil/frame-rate 5)
 
   ; initial state
   (paint/init))
@@ -30,6 +30,7 @@
   (case (:key-code key)
     10  (paint/key-pressed state :ok)
     27  (paint/key-pressed state :esc)
+    83  (paint/key-pressed state :save)
         (paint/key-pressed state (:key key))))
 
 ;;

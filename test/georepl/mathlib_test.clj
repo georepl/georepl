@@ -26,6 +26,7 @@
         q [3 1]
         v [1.5 1.5]
         w [0 1]]
+
     (testing "basics"
       (is (= [-117 -391] (vec-sub [134 420] [17 29])))
       (is (= [0 124] (vec-sub [367 5] [367 129])))
@@ -39,9 +40,11 @@
                (vec-sub
                  (vec-add p v)
                  (vec-add q w))))))
+
     (testing "orthogonal vectors"
       (is (vec-equals? [-1.5 1.5] (vec-ortho v)))
       (is (vec-equals? [-1.0 0.0] (vec-ortho w))))
+
     (testing "length and dist"
       (is (= 10.0 (length [6 8])))
       (is (= 325.0 (length [0 325])))
@@ -54,10 +57,38 @@
       (is (= 0.0 (length [0 0])))
       (is (equals? 2.1213203435596424 (length v)))
       (is (equals? 1 (length w)))
-      (is (equals? 6.670832032063167 (dist p q))))))
+      (is (equals? 6.670832032063167 (dist p q))))
+
+    (testing "vec-scale"
+      (let [p-ref1 p
+            p-ref2 q
+            p-ref3 (vec-scal-mult
+                     0.5
+                     (vec-add p q))]
+        (is (vec-equals? p (vec-scale p-ref1 p 2.0)))
+        (is (vec-equals? q (vec-scale p-ref2 q 2.0)))
+        (is (vec-equals? [-4.65 7.45] (vec-scale p-ref3 p 2.0)))
+        (is (vec-equals? [5.55 -1.15] (vec-scale p-ref3 q 2.0)))))))
 
 
+(deftest vec-rotate-center-test
+  (let [p [0.0 5]
+        q [-1.0 1]]
+  (testing "vec-rotate-center"
+    (is (vec-equals? [-5.0 0.0] (vec-rotate-center p PI-HALF)))
+    (is (vec-equals? [0.0 -5.0] (vec-rotate-center p PI)))
+    (is (vec-equals? [-1.0 -1.0] (vec-rotate-center q PI-HALF)))
+    (is (vec-equals? [1.0 -1.0] (vec-rotate-center q PI))))))
 
+(deftest vec-rotate-test
+  (let [p [0.0 5]
+        q [-1.0 1]
+        ct [2 -2]]
+  (testing "vec-rotate"
+    (is (vec-equals? [-5.0 -4.0] (vec-rotate p ct PI-HALF)))
+    (is (vec-equals? [4.0 -9.0] (vec-rotate p ct PI)))
+    (is (vec-equals? [-1.0 -5.0] (vec-rotate q ct PI-HALF)))
+    (is (vec-equals? [5.0 -5.0] (vec-rotate q ct PI))))))
 
 (deftest angle-test
   (testing "angle"
@@ -67,7 +98,7 @@
     (is (nil? (angle [0 0][1 1])))
     (is (equals? (/ PI 4) (angle [42 42]))))
     (is (nil? (angle [0 1][0 0])))
-    (is (nearly-zero? (angle [574 0]))))
+    (is (nearly-zero? (angle [574 0])))vec-rotate-center)
 
 (deftest round-test
   (testing "round"

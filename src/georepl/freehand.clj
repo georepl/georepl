@@ -3,14 +3,14 @@
             [georepl.shapes :as shapes]))
 
 
-;; user values
+;; these are going to be individual user values someday ...
 ;;
 (def short-range 5)
-;(def medium-range 15)
-;(def snap-speed 0.1)
 (def snap-duration 1000)
 (def dash-speed 0.9)
 
+
+;;
 ;; helper functions
 ;;
 
@@ -20,10 +20,7 @@
 (defn coordinates [p]
   [(first p)(second p)])
 
-
-
-(defn dash-velocity
-  [trace]
+(defn dash-velocity [trace]
   (if (< (count trace) 2)
     0.0
     (let [v (math/vec-sub (first trace)(last trace))]
@@ -32,33 +29,31 @@
 
 
 ; take a random subset of the contour including start and end points in order to avoid pixel-driven Manhattan geometry
-(defn distribute-points
-  [coll]
-  (let [len (count coll)
-        prt (last (take-while (partial > len) [2 3 10]))
-        run (partition-all (int (/ len prt)) coll)]
-    (dedupe (cons (first coll) (map last run)))))
+(defn distribute-points [coll]
+  (let [len     (count coll)
+        divisor (last (take-while (partial > len) [0 2 3 10]))
+        runs    (partition-all (int (/ len (max divisor 1))) coll)]
+    (dedupe (cons (first coll) (map last runs)))))
 
 
 
 ; project first, second and two points 'in the middle' of the contour onto the given circle.
 ; Why two points? To determine orientation! Return projections of first and last point in
 ; mathematical orientation or [0 0] if arc is a full circle"
-(defn arc-segment
-  [p-center radius elm-list]
-    (let [[c1 c2] (split-at (int (/ (count elm-list) 2))
-                            (map coordinates elm-list))
-          coll [(first c1)(last c1)(first c2)(last c2)]
-          [p1 p2 p3 p4] (map #(math/project %
-                                            p-center
-                                            radius) coll)
-          b1 (math/right-from? p1 p4 p2)
-          b2 (math/right-from? p2 p3 p-center)]
-      (if (= b1 b2)
-        [[0 0][0 0]] ; full circle
-        (if b1
-          [p1 p4]    ; deliver triangle in mathematical orientation
-          [p4 p1]))))
+(defn arc-segment [p-center radius elm-list]
+  (let [[c1 c2] (split-at (int (/ (count elm-list) 2))
+                          (map coordinates elm-list))
+        coll [(first c1)(last c1)(first c2)(last c2)]
+        [p1 p2 p3 p4] (map #(math/project %
+                                          p-center
+                                          radius) coll)
+        b1 (math/right-from? p1 p4 p2)
+        b2 (math/right-from? p2 p3 p-center)]
+    (if (= b1 b2)
+      [[0 0][0 0]] ; full circle
+      (if b1
+        [p1 p4]    ; deliver triangle in mathematical orientation
+        [p4 p1]))))
 
 
 
