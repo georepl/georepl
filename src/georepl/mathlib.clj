@@ -37,7 +37,7 @@
         (equals? y (first more))))))
 
 (defn vec-sub [p q]
-  (vec (map - q p)))
+  (vec (map - p q)))
 
 (defn vec-add [p q]
   (vec (map + q p)))
@@ -63,14 +63,14 @@
   (sqrt (reduce + (map * p p))))
 
 (defn dist [p q]
-  (length (vec-sub p q)))
+  (length (vec-sub q p)))
 
 (defn vec-scale [p-fix p-var factor]
   "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
   (vec-add
     p-fix
     (vec-scal-mult factor
-      (vec-sub p-fix p-var))))
+      (vec-sub p-var p-fix))))
 
 (defn dot-product [v w]
   (reduce + (map * v w)))
@@ -112,7 +112,7 @@
   (vec-add
     p-center
     (vec-rotate-center
-      (vec-sub p-center p)
+      (vec-sub p p-center)
       angle)))
 
 (defn project
@@ -135,8 +135,8 @@
 (defn right-from?
   "is point q on the right-hand side of the line from p1 to p2?"
   ([p1 p2 q]
-    (let [v (vec-sub p1 p2)
-          w (vec-sub p1 q)]
+    (let [v (vec-sub p2 p1)
+          w (vec-sub q p1)]
       (neg? (det v w))))
   ([[p1 p2] q]
     (right-from? p1 p2 q)))
@@ -150,7 +150,7 @@
 
 (defn project-point-onto-circle
   [p center-p radius]
-  (let [v (vec-sub center-p p)]
+  (let [v (vec-sub p center-p)]
     (vec-add (vec-scal-mult (/ radius
                                   (length v))
                                v)
@@ -214,8 +214,8 @@
 
 (defn circumcircle [a b c]
   "return center and radius of the circumscribed circle of the triangle given as points a, b, c"
-  (let [v1 (vec-sub b a)
-        v2 (vec-sub b c)
+  (let [v1 (vec-sub a b)
+        v2 (vec-sub c b)
         p1 (vec-add b (vec-scal-mult 0.5 v1))
         p2 (vec-add b (vec-scal-mult 0.5 v2))
         q1 (vec-add p1 (vec-ortho v1))

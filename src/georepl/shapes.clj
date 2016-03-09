@@ -179,7 +179,7 @@
 (defn linear-scale[factor coll]
   (map #(math/vec-scal-mult
          factor
-         (math/vec-sub %1 %2)) coll (rest coll)))
+         (math/vec-sub %1 %2)) (rest coll) coll))
 
 (defrecord Contour [p-list] IShape
   (construct [this]

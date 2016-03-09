@@ -26,7 +26,7 @@
   (refresh [this p]
     (assoc this :elem (shapes/translate
                        (:elem this)
-                       (math/vec-sub (:p-ref (:elem this)) p))))
+                       (math/vec-sub p (:p-ref (:elem this))))))
 
   (current-element [this]
     (:elem this))
@@ -80,7 +80,7 @@
 ;;    (if (= (:just-asked this) :none)
 ;;      (let [line (shapes/translate
 ;;                         (:elem this)
-;;                         (math/vec-sub (:p-ref (:elem this)) p))]
+;;                         (math/vec-sub p (:p-ref (:elem this))))]
 ;;        (assoc this :elem line))
 
   (refresh [this p]
@@ -122,7 +122,7 @@
                                            :just-answered :center)
                                nil))
                         :g (fn[this p]
-                             (let [v (math/vec-sub (:p-center (:elem this)) p)
+                             (let [v (math/vec-sub p (:p-center (:elem this)))
                                    circle (shapes/translate (:elem this) v)]
                                (assoc this :elem circle)))}
                        {:s "define radius"
@@ -194,7 +194,7 @@
                                            :just-answered :start)
                                nil))
                         :g (fn[this p]
-                             (let [v (math/vec-sub (:p-start (:elem this)) p)
+                             (let [v (math/vec-sub p (:p-start (:elem this)))
                                    arc (shapes/translate (:elem this) v)]
                                (assoc this :elem arc)))}
                        {:s "pick end point"
@@ -290,14 +290,14 @@
                         :g (fn[this p]
                              (assoc this :elem (shapes/translate
                                                 (:elem this)
-                                                (math/vec-sub (:p-ref (:elem this)) p))))}
+                                                (math/vec-sub p (:p-ref (:elem this))))))}
                        {:s "ok?"
                         :f (fn[this p]
                              (assoc this :complete? true))
                         :g (fn[this p]
                              (assoc this :elem (shapes/translate
                                                  (:elem this)
-                                                 (math/vec-sub (:p-ref (:elem this)) p))))}])))
+                                                 (math/vec-sub p (:p-ref (:elem this))))))}])))
 
 
   (refresh [this p]

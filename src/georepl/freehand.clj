@@ -23,7 +23,7 @@
 (defn dash-velocity [trace]
   (if (< (count trace) 2)
     0.0
-    (let [v (math/vec-sub (first trace)(last trace))]
+    (let [v (math/vec-sub (last trace)(first trace))]
       (/ (math/length (coordinates v))
          (max 1 (math/abs (timestamp v)))))))
 
@@ -77,8 +77,8 @@
     (if (= (count elm-list) 2)
       (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
       (let [elems (dedupe (map coordinates (distribute-points elm-list)))
-            v-diff  (map math/vec-sub elems (rest elems))
-            v-mean  (math/vec-sub (first elems)(last elems))
+            v-diff  (map math/vec-sub (rest elems) elems)
+            v-mean  (math/vec-sub (last elems)(first elems))
             angles  (map #(math/angle v-mean %) v-diff)
             avg-an  (average angles)
             bias-an (bias avg-an angles)

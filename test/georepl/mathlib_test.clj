@@ -28,18 +28,18 @@
         w [0 1]]
 
     (testing "basics"
-      (is (= [-117 -391] (vec-sub [134 420] [17 29])))
-      (is (= [0 124] (vec-sub [367 5] [367 129])))
-      (is (= [-222 -12] (vec-sub [0 -17] [-222 -29])))
-      (is (= [-44 -42] (vec-sub [44 42] [0 0])))
-      (is (= [17 29] (vec-sub [0 0] [17 29])))
-      (is (= [0 0] (vec-sub [0 0] [0 0])))
+      (is (= [-117 -391] (vec-sub [17 29][134 420])))
+      (is (= [0 124] (vec-sub [367 129][367 5])))
+      (is (= [-222 -12] (vec-sub [-222 -29][0 -17])))
+      (is (= [-44 -42] (vec-sub [0 0][44 42])))
+      (is (= [17 29] (vec-sub [17 29][0 0])))
+      (is (= [0 0] (vec-sub [0 0][0 0])))
       (is (= [8.64 -11.52]
              (vec-scal-mult
                2.4
                (vec-sub
-                 (vec-add p v)
-                 (vec-add q w))))))
+                 (vec-add q w)
+                 (vec-add p v))))))
 
     (testing "orthogonal vectors"
       (is (vec-equals? [-1.5 1.5] (vec-ortho v)))
@@ -134,8 +134,8 @@
   (testing "project-point-onto-circle"
     (is (equals? 0.0 (length
                         (vec-sub
-                         (project-point-onto-circle [400 400] [200 200] 100)
-                         (project-point-onto-circle [203.2 203.2] [200 200] 100)))))
+                         (project-point-onto-circle [203.2 203.2] [200 200] 100)
+                         (project-point-onto-circle [400 400] [200 200] 100)))))
     ))
 
 
@@ -145,13 +145,13 @@
     (is (nil? (intersect-lines [[100 100] [600 100]][[3.7 100] [15 100]])))
     (is (nil? (intersect-lines [[100 100] [700 700]][[30 30] [-14.0 -14.0]])))
     (is (equals? 0.0 (length
-                        (vec-sub [0.0 0.0] (intersect-lines [[-10.0 0.0] [10.0 0.0]][[0.0 -40.0] [0.0 -42.0]])))))
+                        (vec-sub (intersect-lines [[-10.0 0.0] [10.0 0.0]][[0.0 -40.0] [0.0 -42.0]]) [0.0 0.0]))))
     (is (equals? 0.0 (length
-                        (vec-sub [0.0 0.0] (intersect-lines [[-1.0 -1.0] [1.0 1.0]][[-1.0 1.0] [1.0 -1.0]])))))
+                        (vec-sub (intersect-lines [[-1.0 -1.0] [1.0 1.0]][[-1.0 1.0] [1.0 -1.0]]) [0.0 0.0]))))
     (is (equals? 0.0 (length
-                        (vec-sub [0.0 0.0] (intersect-lines [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]])))))
+                        (vec-sub (intersect-lines [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]]) [0.0 0.0]))))
     (is (equals? 0.0 (length
-                        (vec-sub [0.0 0.0] (intersect-lines [[-2.0 -2.0] [2.0 2.0]][[-1.0 1.0] [2.0 -2.0]])))))
+                        (vec-sub (intersect-lines [[-2.0 -2.0] [2.0 2.0]][[-1.0 1.0] [2.0 -2.0]]) [0.0 0.0]))))
     ))
 
 (deftest intersect-line-segments-test
@@ -161,9 +161,9 @@
     (is (nil? (intersect-line-segments [[100 100] [700 700]][[30 30] [-14.0 -14.0]])))
     (is (nil? (intersect-line-segments [[-10.0 0.0] [10.0 0.0]][[0.0 -40.0] [0.0 -42.0]])))
     (is (equals? 0.0 (length
-                        (vec-sub [0.0 0.0] (intersect-line-segments [[-10.0 0.0] [10.0 0.0]][[0.0 40.0] [0.0 -42.0]])))))
+                        (vec-sub (intersect-line-segments [[-10.0 0.0] [10.0 0.0]][[0.0 40.0] [0.0 -42.0]]) [0.0 0.0]))))
     (is (equals? 0.0 (length
-                        (vec-sub [0.0 0.0] (intersect-line-segments [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]])))))
+                        (vec-sub (intersect-line-segments [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]]) [0.0 0.0]))))
     ))
 
 (deftest right-from?-test

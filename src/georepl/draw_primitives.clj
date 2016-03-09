@@ -94,8 +94,8 @@
       :arc     (do
                 (draw-arc (:p-center elem)
                           (:radius elem)
-                          (math/angle (math/vec-sub (:p-center elem) (:p-start elem)))
-                          (math/angle (math/vec-sub (:p-center elem) (:p-end elem)))))
+                          (math/angle (math/vec-sub (:p-start elem)(:p-center elem)))
+                          (math/angle (math/vec-sub (:p-end elem)(:p-center elem)))))
       :circle  (draw-circle (:p-center elem) (:radius elem))
       :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
       :contour (when (= (:visible elem) 1)
