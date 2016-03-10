@@ -54,6 +54,13 @@
 (defn vec-not-equals?[p q]
   (not (vec-equals? p q)))
 
+(defn vec-scale [p-fix p-var factor]
+  "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
+  (vec-add
+    p-fix
+    (vec-scal-mult factor
+      (vec-sub p-var p-fix))))
+
 (defn vec-ortho [v]
   "return a vector which is orthogonal to the given vector v"
   [(* -1.0 (second v)) (first v)])
@@ -64,13 +71,6 @@
 
 (defn dist [p q]
   (length (vec-sub q p)))
-
-(defn vec-scale [p-fix p-var factor]
-  "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
-  (vec-add
-    p-fix
-    (vec-scal-mult factor
-      (vec-sub p-var p-fix))))
 
 (defn dot-product [v w]
   (reduce + (map * v w)))
@@ -115,8 +115,7 @@
       (vec-sub p p-center)
       angle)))
 
-(defn project
-  [p p-center radius]
+(defn project-circle [p p-center radius]
   (if (or
         (equals? radius 0.0)
         (nearly-zero? (dist p p-center)))
@@ -126,8 +125,7 @@
                (/ radius
                   (dist p-center p)))))
 
-(defn det
-  [v w]
+(defn det [v w]
   (let [[a b] v
         [c d] w]
     (- (* a d)(* c b))))
@@ -143,13 +141,11 @@
 
 
 ; [0 2PI] -> [0 360[
-(defn degree
-  [angle]
+(defn degree [angle]
   (* (/ angle TWO-PI) 360.0))
 
 
-(defn project-point-onto-circle
-  [p center-p radius]
+(defn project-point-onto-circle [p center-p radius]
   (let [v (vec-sub p center-p)]
     (vec-add (vec-scal-mult (/ radius
                                   (length v))
@@ -180,8 +176,7 @@
 
 
 
-(defn intersect-lines
-  [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
+(defn intersect-lines [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
   (let [divisor (- (* (- y4 y3)(- x2 x1))
                    (* (- y2 y1)(- x4 x3)))]
     (if (nearly-zero? divisor)
@@ -199,8 +194,7 @@
           divisor)])))
 
 
-(defn intersect-line-segments
-  [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
+(defn intersect-line-segments [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
   (let [s (intersect-lines [[x1 y1][x2 y2]][[x3 y3][x4 y4]])]
     (if (nil? s)
       nil
@@ -225,34 +219,10 @@
       nil
       [center (dist b center)])))
 
-(defn our-round
-  "Round a double to the given precision (number of significant digits)"
-  [precision d]
-  (let [factor (Math/pow 10 precision)]
-    (/ (Math/round (* d factor)) factor)))
-
-(defn oriented-curvature?[coll]
-  (not (and (some neg? coll) (some pos? coll))))
-
 
 ;;NYI: REFACTOR: delete
-(defn disjoin-plus-minus
-  [coll]
+(defn disjoin-plus-minus [coll]
   (let [cl (filter (comp not nearly-zero?) coll)]
     (if (empty? cl)
       [[0] [0]]
       [(filter pos? cl) (filter neg? cl)])))
-
-
-(defn proximity
-  [coll delta]
-  (let [x-min (reduce min (map first coll))
-        x-max (reduce max (map first coll))
-        y-min (reduce min (map last  coll))
-        y-max (reduce max (map last  coll))]
-    (if (or
-          (> (- x-max x-min) delta)
-          (> (- y-max y-min) delta))
-      nil
-      [(/ (+ x-max x-min) 2)
-       (/ (+ y-max y-min) 2)])))

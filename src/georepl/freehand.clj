@@ -44,9 +44,9 @@
   (let [[c1 c2] (split-at (int (/ (count elm-list) 2))
                           (map coordinates elm-list))
         coll [(first c1)(last c1)(first c2)(last c2)]
-        [p1 p2 p3 p4] (map #(math/project %
-                                          p-center
-                                          radius) coll)
+        [p1 p2 p3 p4] (map #(math/project-circle %
+                                                 p-center
+                                                 radius) coll)
         b1 (math/right-from? p1 p4 p2)
         b2 (math/right-from? p2 p3 p-center)]
     (if (= b1 b2)

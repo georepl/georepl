@@ -132,7 +132,7 @@
                                                                :p-ref (if (math/equals? (:p-center circle) p)
                                                                         (math/vec-add p [(math/dist (:p-center circle) p)
                                                                                          (second (:p-center circle))])
-                                                                        (math/project p
+                                                                        (math/project-circle p
                                                                                       (:p-center circle)
                                                                                       (:radius circle))))
                                            :quector (rest (:quector this))

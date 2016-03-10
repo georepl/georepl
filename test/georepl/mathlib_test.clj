@@ -41,6 +41,26 @@
                  (vec-add q w)
                  (vec-add p v))))))
 
+    (testing "zero, equality and non-equality"
+      (is (vec-zero? [0 0 0]))
+      (is (not (vec-zero? [0 1 0])))
+      (is (vec-not-equals? p q))
+      (is (vec-not-equals? v w))
+      (is (not (vec-not-equals? p p)))
+      (is (not (vec-not-equals? w w))))
+
+    (testing "vec-scale"
+      (let [p-ref1 p
+            p-ref2 q
+            p-ref3 (vec-scal-mult
+                     0.5
+                     (vec-add p q))]
+        (is (vec-equals? p (vec-scale p-ref1 p 2.0)))
+        (is (vec-equals? q (vec-scale p-ref2 q 2.0)))
+        (is (vec-equals? [-4.65 7.45] (vec-scale p-ref3 p 2.0)))
+        (is (vec-equals? [5.55 -1.15] (vec-scale p-ref3 q 2.0)))))
+
+
     (testing "orthogonal vectors"
       (is (vec-equals? [-1.5 1.5] (vec-ortho v)))
       (is (vec-equals? [-1.0 0.0] (vec-ortho w))))
@@ -59,16 +79,22 @@
       (is (equals? 1 (length w)))
       (is (equals? 6.670832032063167 (dist p q))))
 
-    (testing "vec-scale"
-      (let [p-ref1 p
-            p-ref2 q
-            p-ref3 (vec-scal-mult
-                     0.5
-                     (vec-add p q))]
-        (is (vec-equals? p (vec-scale p-ref1 p 2.0)))
-        (is (vec-equals? q (vec-scale p-ref2 q 2.0)))
-        (is (vec-equals? [-4.65 7.45] (vec-scale p-ref3 p 2.0)))
-        (is (vec-equals? [5.55 -1.15] (vec-scale p-ref3 q 2.0)))))))
+    (testing "dot-product"
+      (is (equals? 0.0 (dot-product [1 0][0 1])))
+      (is (equals? 1.0 (dot-product [1 0][1 0]))))
+
+    (testing "angle"
+      (is (nearly-zero? (angle [0 1][0 1])))
+      (is (equals? PI-HALF (angle [1 0][0 1])))
+      (is (equals? (* -1 PI-HALF) (angle [0 1][1 0])))
+      (is (nil? (angle [0 0][1 1])))
+      (is (equals? (/ PI 4) (angle [42 42])))
+      (is (nil? (angle [0 1][0 0])))
+      (is (nearly-zero? (angle [574 0]))))
+
+    (testing "angle-dir-test"
+      (is (equals? 0.3947911196997611 (angle-dir [3 2][2 3])))
+      )))
 
 
 (deftest vec-rotate-center-test
@@ -90,22 +116,9 @@
     (is (vec-equals? [-1.0 -5.0] (vec-rotate q ct PI-HALF)))
     (is (vec-equals? [5.0 -5.0] (vec-rotate q ct PI))))))
 
-(deftest angle-test
-  (testing "angle"
-    (is (nearly-zero? (angle [0 1][0 1])))
-    (is (equals? PI-HALF (angle [1 0][0 1])))
-    (is (equals? (* -1 PI-HALF) (angle [0 1][1 0])))
-    (is (nil? (angle [0 0][1 1])))
-    (is (equals? (/ PI 4) (angle [42 42]))))
-    (is (nil? (angle [0 1][0 0])))
-    (is (nearly-zero? (angle [574 0])))vec-rotate-center)
-
-(deftest round-test
-  (testing "round"
-    (is (= 10 (round 10)))
-    (is (= 10 (round 10.0)))
-    (is (= 10 (round 10.4)))
-    (is (= 11 (round 10.5)))))
+(deftest project-circle-test
+  (testing "project-circle"
+    (is (= [100.0 50.0] (project-circle [100 10] [100 100] 50)))))
 
 (deftest det-test
   (testing "det"
@@ -116,18 +129,17 @@
     (is (= -450 (det [3 -42][-11 4])))
   ))
 
+(deftest right-from?-test
+  (testing "right-from?"
+    (is (right-from? [[0.0 0.0][42.0 42.0]] [22.0 1.0]))
+    ))
+
 (deftest degree-test
   (testing "degree"
     (is (equals? 0.0 (degree 0.0)))
     (is (equals? 360.0 (degree TWO-PI)))
     (is (equals? 180.0 (degree PI)))
     (is (equals? 270.0 (degree (* (/ 3 2) PI))))
-    ))
-
-(deftest dot-product-test
-  (testing "dot-product"
-    (is (equals? 0.0 (dot-product [1 0][0 1])))
-    (is (equals? 1.0 (dot-product [1 0][1 0])))
     ))
 
 (deftest project-point-onto-circle-test
@@ -138,6 +150,12 @@
                          (project-point-onto-circle [400 400] [200 200] 100)))))
     ))
 
+(deftest intersect-circles-test
+  (testing "intersect-circles-test"
+    (let [[p q] (intersect-circles [50 50] 100 [80 60] 80)]
+    (is (and
+          (vec-equals? p [140.70253 138.10760])
+          (vec-equals? q [97.29746 138.10760]))))))
 
 (deftest intersect-lines-test
   (testing "intersect-lines"
@@ -166,7 +184,16 @@
                         (vec-sub (intersect-line-segments [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]]) [0.0 0.0]))))
     ))
 
-(deftest right-from?-test
-  (testing "right-from?"
-    (is (right-from? [[0.0 0.0][42.0 42.0]] [22.0 1.0]))
-    ))
+(deftest circumcircle-test
+  (testing "circumcircle"
+    (let [[p r] (circumcircle [5 6][17 2][12 21])]
+      (is (and
+            (vec-equals? p [13.40384 11.21153])
+            (equals? r 9.88861))))))
+
+(deftest round-test
+  (testing "round"
+    (is (= 10 (round 10)))
+    (is (= 10 (round 10.0)))
+    (is (= 10 (round 10.4)))
+    (is (= 11 (round 10.5)))))

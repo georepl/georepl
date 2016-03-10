@@ -75,8 +75,7 @@
       (doseq [line (line-seq rdr)]
         (push-elem (edn/read-string line))))
       (catch java.io.FileNotFoundException e
-        (throw e))
-      (catch Exception e
-        (throw e))
-      (finally
-        (prn "HuHu!"))))
+        (prn "Could not find file:" (:cause e))
+        nil)
+    (catch Exception e
+      (throw e))))
