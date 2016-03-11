@@ -15,20 +15,18 @@
 ;;
 ;; primitives
 ;;
-(defn draw-text [s top-left bottom-right]
+(defn- draw-text [s top-left bottom-right]
   (quil/text s (first top-left)
                (second top-left)
                (first bottom-right)
                (second bottom-right)))
 
 
-(defn text-height
-  [height]
+(defn text-height [height]
   (quil/text-size height))
 
 
-(defn text-width
-  [coll]
+(defn text-width [coll]
   (reduce max (map quil/text-width coll)))
 
 
@@ -51,14 +49,14 @@
       (quil/no-fill))))
 
 
-(defn draw-line [p q]
+(defn- draw-line [p q]
  (quil/line (first p)
             (second p)
             (first q)
             (second q)))
 
 
-(defn draw-arc [p-center radius angle-start angle-end]
+(defn- draw-arc [p-center radius angle-start angle-end]
   (let [diam (* radius 2)
         ang2 (if (< angle-start angle-end)
                angle-end
@@ -71,7 +69,7 @@
               ang2)))
 
 
-(defn draw-circle [p-center radius]
+(defn- draw-circle [p-center radius]
   (let [diam (* radius 2)]
     (quil/ellipse (first p-center)
                   (second p-center)
@@ -79,7 +77,7 @@
                   diam)))
 
 
-(defn draw-contour[points]
+(defn- draw-contour[points]
   (when (>= (count points) 2)
     (doseq [[p q] (map list points (rest points))]
       (draw-line p q))))
@@ -126,4 +124,3 @@
                [50 0 0]))
       (draw-text (:s e) (:p1 e) (:p2 e))
   (quil/no-fill)))))
-

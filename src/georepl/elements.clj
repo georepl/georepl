@@ -12,19 +12,19 @@
   (filter #(> (:visible %) 0) @elems))
 
 
-(defn clear-temporary []
+(defn- clear-temporary []
   (swap! elems filter #(pos? (:visible %)) @elems))
 
 
-(defn clear []
+(defn- clear []
   (swap! elems empty))
 
 
-(defn elems-length []
+(defn- elems-length []
   (count @elems))
 
 
-(defn tos []
+(defn- tos []
   (first @elems))
 
 
@@ -38,18 +38,12 @@
       e))
 
 
-(defn new-elem [e]
+(defn- new-elem [e]
   (pop-elem)
   (push-elem e))
 
 
-(defn pop-elem []
-  (let [e (tos)]
-    (swap! elems rest)
-      e))
-
-
-(defn ppop-elem []
+(defn- ppop-elem []
   (pop-elem)
   (pop-elem))
 
@@ -69,7 +63,7 @@
       (throw e))))
 
 
-(defn read-file[name]
+(defn- read-file[name]
   (try
     (with-open [rdr (io/reader name)]
       (doseq [line (line-seq rdr)]

@@ -17,10 +17,10 @@
 (defn timestamp [p]
   (last p))
 
-(defn coordinates [p]
+(defn- coordinates [p]
   [(first p)(second p)])
 
-(defn dash-velocity [trace]
+(defn- dash-velocity [trace]
   (if (< (count trace) 2)
     0.0
     (let [v (math/vec-sub (last trace)(first trace))]
@@ -29,7 +29,7 @@
 
 
 ; take a random subset of the contour including start and end points in order to avoid pixel-driven Manhattan geometry
-(defn distribute-points [coll]
+(defn- distribute-points [coll]
   (let [len     (count coll)
         divisor (last (take-while (partial > len) [0 2 3 10]))
         runs    (partition-all (int (/ len (max divisor 1))) coll)]
@@ -40,7 +40,7 @@
 ; project first, second and two points 'in the middle' of the contour onto the given circle.
 ; Why two points? To determine orientation! Return projections of first and last point in
 ; mathematical orientation or [0 0] if arc is a full circle"
-(defn arc-segment [p-center radius elm-list]
+(defn- arc-segment [p-center radius elm-list]
   (let [[c1 c2] (split-at (int (/ (count elm-list) 2))
                           (map coordinates elm-list))
         coll [(first c1)(last c1)(first c2)(last c2)]
@@ -59,12 +59,12 @@
 
 ;; helpers (statistics)
 ;;
-(defn average
-  [coll]
+(defn- average [coll]
+;(prn "freehand/average:" coll)
     (/(reduce + coll)(max 1 (count coll))))
 
-(defn bias
-  [p points]
+(defn- bias [p points]
+;(prn "freehand/bias:" p points)
   (average (map (comp math/sq (partial - p)) points)))
 
 

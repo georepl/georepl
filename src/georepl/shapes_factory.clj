@@ -20,13 +20,22 @@
 ;;
 (defrecord PointFactory[elem] IShapesFactory
   (create [this]
-    (elements/push-elem elem)
-    (assoc this :complete? false))
+    (assoc this :elem elem
+                :complete? false
+                :just-answered :none
+                :quector [{:s "single points"
+                           :f (fn[this p]
+                                (let [e (current-element this)]
+                                  (update-element this (assoc e :p p :p-ref p))))
+                           :g (fn[this p]
+                                (let [e (current-element this)]
+                                  (update-element this (assoc e :p p :p-ref p))))}]))
+
 
   (refresh [this p]
-    (assoc this :elem (shapes/translate
-                       (:elem this)
-                       (math/vec-sub p (:p-ref (:elem this))))))
+    (if-let [quector (first (:quector this))]
+      ((:g quector) this p)
+      this))
 
   (current-element [this]
     (:elem this))
@@ -35,15 +44,9 @@
     (assoc this :elem elem))
 
   (current-question[this]
-    [{:s "single points"
-      :f (fn[this p] (fn[this p] :point)
-             this)
-      :type :immediate
-      :val 0}
-     {:s "polygone"
-      :f (fn[this p] :polygone)
-      :type :immediate
-      :val 1}])
+    (if-let [quector (first (:quector this))]
+      (:f quector)
+      nil))
 
   (finish [this]
     (elements/push-elem elem)
@@ -60,28 +63,24 @@
     (assoc this :elem elem
                 :complete? false
                 :just-answered :none
-                :quector [{:s "toggle reference point"
+                :quector [{:s "next point"
                            :f (fn[this p]
-                                (let [line (:elem this)]
+                                (let [line (current-element this)]
                                   (if (math/nearly-zero? (math/dist (:p1 line) p))
                                     this
                                     (assoc this :elem (assoc line :p2 p
                                                                   :p-ref (:p2 line))
                                                 :complete? true))))
                            :g (fn [this p]
-                                (let [line (assoc (:elem this) :p2 p)]
-                                  (assoc this :elem line)))}
+                                (let [line (assoc (current-element this) :p2 p :p-ref p)]
+                                  (update-element this line)))}
                           {:s "ok?"
-                           :f (fn[this p](assoc this :complete? true))
+                           :f (fn[this p]
+                                (assoc this :complete? true))
                            :g (fn [this p]
-                                (let [line (assoc (:elem this) :p2 p)]
-                                  (assoc this :elem line)))}]))
+                                (let [line (assoc (current-element this) :p2 p :p-ref p)]
+                                  (update-element this line)))}]))
 
-;;    (if (= (:just-asked this) :none)
-;;      (let [line (shapes/translate
-;;                         (:elem this)
-;;                         (math/vec-sub p (:p-ref (:elem this))))]
-;;        (assoc this :elem line))
 
   (refresh [this p]
     (if-let [quector (first (:quector this))]
@@ -100,7 +99,7 @@
       nil))
 
   (finish [this]
-    (elements/push-elem (:elem this))
+    (elements/push-elem (current-element this))
     :line))
 
 
@@ -114,7 +113,7 @@
              :complete? false
              :quector [{:s "pick center point"
                         :f (fn[this p]
-                             (if-let [circle (:elem this)]
+                             (if-let [circle (current-element this)]
                                (assoc this :elem (assoc circle :p-center p
                                                                :p-ref p)
                                            :quector (rest (:quector this))
@@ -122,29 +121,30 @@
                                            :just-answered :center)
                                nil))
                         :g (fn[this p]
-                             (let [v (math/vec-sub p (:p-center (:elem this)))
-                                   circle (shapes/translate (:elem this) v)]
-                               (assoc this :elem circle)))}
+                             (let [v (math/vec-sub p (:p-center (current-element this)))
+                                   circle (shapes/translate (current-element this) v)]
+                               (update-element this circle)))}
                        {:s "define radius"
                         :f (fn[this p]
-                             (if-let [circle (:elem this)]
+                             (if-let [circle (current-element this)]
                                (assoc this :elem (assoc circle :radius (math/dist (:p-center circle) p)
                                                                :p-ref (if (math/equals? (:p-center circle) p)
                                                                         (math/vec-add p [(math/dist (:p-center circle) p)
                                                                                          (second (:p-center circle))])
-                                                                        (math/project-circle p
-                                                                                      (:p-center circle)
-                                                                                      (:radius circle))))
+                                                                        (math/project-circle
+                                                                          p
+                                                                          (:p-center circle)
+                                                                          (:radius circle))))
                                            :quector (rest (:quector this))
                                            :complete? (= (:just-answered this) :center)
                                            :just-answered :radius)
                                nil))
                         :g (fn[this p]
-                             (let [factor (/ (math/dist (:p-center (:elem this)) p)
-                                             (max (:radius (:elem this)) math/EPS))
-                                   circle (shapes/scale (:elem this) factor)]
-                               (if-not (math/equals? p (:p-center (:elem this)))
-                                 (assoc this :elem circle)
+                             (let [factor (/ (math/dist (:p-center (current-element this)) p)
+                                             (max (:radius (current-element this)) math/EPS))
+                                   circle (shapes/scale (current-element this) factor)]
+                               (if-not (math/equals? p (:p-center (current-element this)))
+                                 (update-element this circle)
                                  this)))}
                        {:s "define point on circle"
                         :f (fn[this p]
@@ -170,7 +170,7 @@
       nil))
 
   (finish [this]
-    (elements/push-elem (:elem this))
+    (elements/push-elem (current-element this))
     :circle))
 
 
@@ -186,7 +186,7 @@
              :complete? false
              :quector [{:s "pick start point"
                         :f (fn[this p]
-                             (if-let [arc (:elem this)]
+                             (if-let [arc (current-element this)]
                                (assoc this :elem (assoc arc :p-start p
                                                             :p-ref p)
                                            :quector (rest (:quector this))
@@ -194,12 +194,12 @@
                                            :just-answered :start)
                                nil))
                         :g (fn[this p]
-                             (let [v (math/vec-sub p (:p-start (:elem this)))
-                                   arc (shapes/translate (:elem this) v)]
-                               (assoc this :elem arc)))}
+                             (let [v (math/vec-sub p (:p-start (current-element this)))
+                                   arc (shapes/translate (current-element this) v)]
+                               (update-element this arc)))}
                        {:s "pick end point"
                         :f (fn[this p]
-                             (if-let [arc (:elem this)]
+                             (if-let [arc (current-element this)]
                                (assoc this :elem (assoc arc :p-end p
                                                             :p-ref p)
                                            :quector (rest (:quector this))
@@ -207,27 +207,27 @@
                                            :just-answered :end)
                                nil))
                         :g (fn[this p]
-                             (let [p-s (:p-start (:elem this))
-                                   p-e (:p-end (:elem this))
-                                   p-c (:p-center (:elem this))
+                             (let [p-s (:p-start (current-element this))
+                                   p-e (:p-end (current-element this))
+                                   p-c (:p-center (current-element this))
                                    factor (/ (math/dist p-s p)
                                              (math/dist p-s p-e))
                                    new-p-c  (math/vec-scale p-s p-c factor)]
                                (if-not (math/nearly-zero? factor)
-                                 (assoc this :elem (shapes/constructArc
-                                                     new-p-c
-                                                     (math/dist p-s new-p-c)
-                                                     p-s
-                                                     p))
+                                 (update-element this (shapes/constructArc
+                                                      new-p-c
+                                                      (math/dist p-s new-p-c)
+                                                      p-s
+                                                      p))
                                  this)))}
                        {:s "define point on circle"
                         :f (fn[this p]
                              (let [circle (math/circumcircle
-                                            (:p-start (:elem this))
+                                            (:p-start (current-element this))
                                             p
-                                            (:p-end (:elem this)))]
-                               (if-let [arc (assoc (:elem this) :p-center (first circle)
-                                                                :radius (second circle))]
+                                            (:p-end (current-element this)))]
+                               (if-let [arc (assoc (current-element this) :p-center (first circle)
+                                                                          :radius (second circle))]
                                  (assoc this :elem arc
                                              :p-ref (math/project-point-onto-circle
                                                       p (first circle)(second circle))
@@ -236,15 +236,15 @@
                                              :just-answered :onp)
                                  nil)))
                         :g (fn[this p]
-                             (let [p-s (:p-start (:elem this))
-                                   p-e (:p-end (:elem this))
+                             (let [p-s (:p-start (current-element this))
+                                   p-e (:p-end (current-element this))
                                    circle (math/circumcircle p-s p p-e)]
                                (if-not (nil? circle)
-                                 (assoc this :elem (shapes/constructArc
-                                                    (first circle)
-                                                    (second circle)
-                                                    p-s
-                                                    p-e))
+                                 (update-element this (shapes/constructArc
+                                                     (first circle)
+                                                     (second circle)
+                                                     p-s
+                                                     p-e))
                                  this)))}])))
 
 
@@ -265,7 +265,7 @@
       nil))
 
   (finish [this]
-    (elements/push-elem (:elem this))
+    (elements/push-elem (current-element this))
     :arc))
 
 
@@ -281,7 +281,7 @@
              :complete? false
              :quector [{:s "pick a trace"
                         :f (fn[this p]
-                              (if-let [contour (:elem this)]
+                              (if-let [contour (current-element this)]
                                 (assoc this :elem (assoc contour :p-list (reverse (:p-list contour))
                                                                  :p-ref (last (:p-list contour))
                                                                  :complete? false)
@@ -289,15 +289,15 @@
                                 this))
                         :g (fn[this p]
                              (assoc this :elem (shapes/translate
-                                                (:elem this)
-                                                (math/vec-sub p (:p-ref (:elem this))))))}
+                                                (current-element this)
+                                                (math/vec-sub p (:p-ref (current-element this))))))}
                        {:s "ok?"
                         :f (fn[this p]
                              (assoc this :complete? true))
                         :g (fn[this p]
-                             (assoc this :elem (shapes/translate
-                                                 (:elem this)
-                                                 (math/vec-sub p (:p-ref (:elem this))))))}])))
+                             (update-element this (shapes/translate
+                                                  (current-element this)
+                                                  (math/vec-sub p (:p-ref (current-element this))))))}])))
 
 
   (refresh [this p]
@@ -317,7 +317,7 @@
       nil))
 
   (finish [this]
-    (elements/push-elem (:elem this))
+    (elements/push-elem (current-element this))
     :contour))
 
 

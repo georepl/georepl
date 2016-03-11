@@ -176,7 +176,7 @@
 
 ;; 'contour' basic shape
 ;;
-(defn linear-scale[factor coll]
+(defn- linear-scale[factor coll]
   (map #(math/vec-scal-mult
          factor
          (math/vec-sub %1 %2)) (rest coll) coll))

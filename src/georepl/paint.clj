@@ -13,12 +13,12 @@
 ;;
 ;;helper functions
 ;;
-(defn snap-time-exceeded? [t]
+(defn- snap-time-exceeded? [t]
   (> (- (System/currentTimeMillis) t)
     freehand/snap-duration))
 
 
-(defn next-point-on-element [coll p]
+(defn- next-point-on-element [coll p]
   (if (empty? coll)
     nil
     (first
@@ -171,7 +171,7 @@
 ;;
 ;; the answer-the-question mode implementation
 ;;
-(defn modify [state]
+(defn- modify [state]
   state)
 
 
@@ -248,9 +248,6 @@
 (prn "State: " state)
                            (assoc state :f-cur (:f quest) :p-cur p))
                          state)))))
-
-
-
 
 
   (picked [this]

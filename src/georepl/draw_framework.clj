@@ -11,7 +11,7 @@
 ;;
 ;; framework functions
 ;;
-(defn setup []
+(defn- setup []
   (quil/background 255)
   (quil/no-fill)
 
@@ -22,11 +22,11 @@
   (paint/init))
 
 
-(defn draw [state]
+(defn- draw [state]
   (quil/background 255)
   (paint/draw state))
 
-(defn key-pressed [state key]
+(defn- key-pressed [state key]
   (case (:key-code key)
     10  (paint/key-pressed state :ok)
     27  (paint/key-pressed state :esc)
@@ -49,6 +49,3 @@
     :key-pressed key-pressed
     :middleware [m/fun-mode])
   nil)
-
-
-

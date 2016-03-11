@@ -1,7 +1,7 @@
 (ns georepl.freehand_test
   (:require [clojure.test :refer :all]
             [georepl.mathlib :as math]
-            [georepl.freehand :refer :all]))
+            [georepl.freehand :as freehand]))
 
 
 
@@ -203,64 +203,65 @@
 
 (deftest timestamp-and-coordinates-test
   (testing "timestamp and coordinates"
-    (is (= (map #(%1 (second %2)(first %2)) (map timestamp line1)(map coordinates line1)))
+    (is (= (map #(%1 (second %2)(first %2)) (map freehand/timestamp line1)(map #'freehand/coordinates line1)))
         (map reverse line1))))
 
 
 (deftest dash-velocity-test
   (testing "dash-velocity"
-    (is (= 0.0 (dash-velocity [])))
-    (is (= 0.0 (dash-velocity [[714 283 1405]])))
-    (is (= 0.0 (dash-velocity [[714 283 1405][714 283 1405]])))
-    (is (= 0.0 (dash-velocity [[714 283 1633][714 283 1405]])))
-    (is (= 4.0 (dash-velocity '([244 577 3601] [244 579 3601] [244 581 3600]))))
-    (is (math/equals? 12.369317054748535 (dash-velocity '([549 594 4380] [546 606 4380]))))))
+    (is (= 0.0 (#'freehand/dash-velocity [])))
+    (is (= 0.0 (#'freehand/dash-velocity [[714 283 1405]])))
+    (is (= 0.0 (#'freehand/dash-velocity [[714 283 1405][714 283 1405]])))
+    (is (= 0.0 (#'freehand/dash-velocity [[714 283 1633][714 283 1405]])))
+    (is (= 4.0 (#'freehand/dash-velocity '([244 577 3601] [244 579 3601] [244 581 3600]))))
+    (is (math/equals? 12.369317054748535 (#'freehand/dash-velocity '([549 594 4380] [546 606 4380]))))))
 
 
 
 (deftest distribute-points-test
   (testing "distribute-points"
-    (is (= result-arc1 (distribute-points arc1)))
-    (is (= (distribute-points [:p1]) [:p1]))
-    (is (= (distribute-points [:p1 :p2 :p3]) [:p1 :p2 :p3]))
-    (is (= (distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13])
-           [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13]))
-    (is (= (distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13 :p14
-                               :p15 :p16 :p17 :p18 :p19 :p20 :p21 :p22 :p23 :p24 :p25 :p26 :p27 :p28])
-           [:p1 :p2 :p4 :p6 :p8 :p10 :p12 :p14 :p16 :p18 :p20 :p22 :p24 :p26 :p28]))
-    (is (= (distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13 :p14
-                               :p15 :p16 :p17 :p18 :p19 :p20 :p21 :p22 :p23 :p24 :p25 :p26 :p27 :p28
-                               :p29 :p30 :p31 :p32 :p33 :p34 :p35 :p36 :p37 :p38 :p39 :p40 :p41 :p42
-                               :p43])
-           [:p1 :p4 :p8 :p12 :p16 :p20 :p24 :p28 :p32 :p36 :p40 :p43]))
-    (is (= (distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13 :p14
-                               :p15 :p16 :p17 :p18 :p19 :p20 :p21 :p22 :p23 :p24 :p25 :p26 :p27 :p28
-                               :p29 :p30 :p31 :p32 :p33 :p34 :p35 :p36 :p37 :p38 :p39 :p40 :p41 :p42
-                               :p43 :p44 :p45 :p46 :p47 :p48 :p49 :p50 :p51 :p52 :p53 :p54 :p55 :p56
-                               :p57 :p58 :p59 :p60 :p61 :p62 :p63 :p64 :p65 :p66 :p67 :p68 :p69 :p70
-                               :p71 :p72 :p73 :p74 :p75 :p76 :p77 :p78 :p79 :p80 :p81 :p82 :p83 :p84
-                               :p85 :p86 :p87 :p88 :p89 :p90 :p91 :p92 :p93 :p94 :p95 :p96 :p97 :p98])
-           [:p1 :p9 :p18 :p27 :p36 :p45 :p54 :p63 :p72 :p81 :p90 :p98]))))
+    (is (= result-arc1 (#'freehand/distribute-points arc1)))
+    (is (= (#'freehand/distribute-points [:p1]) [:p1]))
+    (is (= (#'freehand/distribute-points [:p1 :p2 :p3]) [:p1 :p2 :p3]))
+    (is (= (#'freehand/distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13])
+                                         [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13]))
+    (is (= (#'freehand/distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13 :p14
+                                          :p15 :p16 :p17 :p18 :p19 :p20 :p21 :p22 :p23 :p24 :p25 :p26 :p27 :p28])
+                                         [:p1 :p2 :p4 :p6 :p8 :p10 :p12 :p14 :p16 :p18 :p20 :p22 :p24 :p26 :p28]))
+    (is (= (#'freehand/distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13 :p14
+                                          :p15 :p16 :p17 :p18 :p19 :p20 :p21 :p22 :p23 :p24 :p25 :p26 :p27 :p28
+                                          :p29 :p30 :p31 :p32 :p33 :p34 :p35 :p36 :p37 :p38 :p39 :p40 :p41 :p42
+                                          :p43])
+                                         [:p1 :p4 :p8 :p12 :p16 :p20 :p24 :p28 :p32 :p36 :p40 :p43]))
+    (is (= (#'freehand/distribute-points [:p1 :p2 :p3 :p4 :p5 :p6 :p7 :p8 :p9 :p10 :p11 :p12 :p13 :p14
+                                          :p15 :p16 :p17 :p18 :p19 :p20 :p21 :p22 :p23 :p24 :p25 :p26 :p27 :p28
+                                          :p29 :p30 :p31 :p32 :p33 :p34 :p35 :p36 :p37 :p38 :p39 :p40 :p41 :p42
+                                          :p43 :p44 :p45 :p46 :p47 :p48 :p49 :p50 :p51 :p52 :p53 :p54 :p55 :p56
+                                          :p57 :p58 :p59 :p60 :p61 :p62 :p63 :p64 :p65 :p66 :p67 :p68 :p69 :p70
+                                          :p71 :p72 :p73 :p74 :p75 :p76 :p77 :p78 :p79 :p80 :p81 :p82 :p83 :p84
+                                          :p85 :p86 :p87 :p88 :p89 :p90 :p91 :p92 :p93 :p94 :p95 :p96 :p97 :p98])
+                                         [:p1 :p9 :p18 :p27 :p36 :p45 :p54 :p63 :p72 :p81 :p90 :p98]))))
 
 
 (deftest arc-segment-test
   (testing "arc-segment"
-    (is (= (arc-segment (first arc2) (second arc2) (last arc2))
-           result-arc2))
-    (is (= (arc-segment (first arc2) (second arc2) (reverse (last arc2)))
-           result-arc2))))
+    (is (= (#'freehand/arc-segment (first arc2) (second arc2) (last arc2))
+                      result-arc2))
+    (is (= (#'freehand/arc-segment (first arc2) (second arc2) (reverse (last arc2)))
+                      result-arc2))))
 
 
 (deftest average-test
   (testing "average"
-    (is (= 0 (average [])))
-    (is (= 42 (average [42])))
-    (is (= 3 (average [1 2 3 4 5])))
+    (is (= 0 (#'freehand/average nil)))
+    (is (= 0 (#'freehand/average [])))
+    (is (= 42 (#'freehand/average [42])))
+    (is (= 3 (#'freehand/average [1 2 3 4 5])))
     ))
 
 (deftest bias-test
   (testing "bias"
-    (is (math/equals? 0.1 (bias 2.0 [2.5 1.5 2.2 1.8 2.1 1.9])))
+    (is (math/equals? 0.1 (#'freehand/bias 2.0 [2.5 1.5 2.2 1.8 2.1 1.9])))
     ))
 
 
@@ -268,18 +269,18 @@
 
 (deftest analyze-shape-test
   (testing "analyze-shape"
-    (is (= :line (:type (analyze-shape line1))))
-    (is (= :circle (:type (analyze-shape circle1))))
-    (is (= :circle (:type (analyze-shape circle2))))
-    (is (= :circle (:type (analyze-shape circle3))))
-    (is (= :arc (:type (analyze-shape arc3))))
-    (is (= :arc (:type (analyze-shape arc4))))
-    (is (= :arc (:type (analyze-shape arc5))))
-    (is (= :arc (:type (analyze-shape arc6))))
-    (is (= :arc (:type (analyze-shape arc7))))
-    (is (= :arc (:type (analyze-shape arc8))))
-    (is (= :contour (:type (analyze-shape sinus1))))
-    (is (= :contour (:type (analyze-shape zwo1))))
-    (is (= :contour (:type (analyze-shape V4eck))))
+    (is (= :line (:type (freehand/analyze-shape line1))))
+    (is (= :circle (:type (freehand/analyze-shape circle1))))
+    (is (= :circle (:type (freehand/analyze-shape circle2))))
+    (is (= :circle (:type (freehand/analyze-shape circle3))))
+    (is (= :arc (:type (freehand/analyze-shape arc3))))
+    (is (= :arc (:type (freehand/analyze-shape arc4))))
+    (is (= :arc (:type (freehand/analyze-shape arc5))))
+    (is (= :arc (:type (freehand/analyze-shape arc6))))
+    (is (= :arc (:type (freehand/analyze-shape arc7))))
+    (is (= :arc (:type (freehand/analyze-shape arc8))))
+    (is (= :contour (:type (freehand/analyze-shape sinus1))))
+    (is (= :contour (:type (freehand/analyze-shape zwo1))))
+    (is (= :contour (:type (freehand/analyze-shape V4eck))))
     ))
 
