@@ -8,7 +8,9 @@
   (next-point [this p])
   (translate[this v])
   (rotate[this angle])
-  (scale[this factor]))
+  (rotate-ref[this p angle])
+  (scale[this factor])
+  (scale-ref[this p factor]))
 
 
 ;; 'point' basic shape
@@ -29,9 +31,21 @@
       (assoc this :p q
                   :p-ref q)))
 
-  (rotate [this angle] this)
+  (rotate [this angle]
+    this)
 
-  (scale [this factor] this))
+  (rotate-ref [this p-r angle]
+    (let [p (math/vec-rotate (:p this) p-r angle)]
+      (assoc this :p p
+                  :p-ref p)))
+
+  (scale [this factor]
+      this)
+
+  (scale-ref [this p-r factor]
+    (-> this
+      (assoc :p (math/vec-scale p-r (:p this) factor)
+             :p-ref (math/vec-scale p-r (:p-ref this) factor)))))
 
 
 (defn constructPoint [p]
@@ -65,20 +79,20 @@
                   :p-ref q)))
 
   (rotate [this angle]
-    (let [p (math/vec-rotate (:p1 this) (:p-ref this) angle)
-          q (math/vec-rotate (:p2 this) (:p-ref this) angle)]
+    (rotate-ref this (:p-ref this) angle))
+
+  (rotate-ref [this p-r angle]
+    (let [p (math/vec-rotate (:p1 this) p-r angle)
+          q (math/vec-rotate (:p2 this) p-r angle)]
       (assoc this :p1 p :p2 q :p-ref p)))
 
   (scale [this factor]
-    (let [p (math/vec-scale
-             (:p1 this)
-             (:p-ref this)
-             factor)
-          q (math/vec-scale
-             (:p2 this)
-             (:p-ref this)
-             factor)]
-      (assoc this :p1 p :p2 q))))
+    (scale-ref this (:p-ref this) factor))
+
+  (scale-ref [this p-r factor]
+    (assoc this :p1 (math/vec-scale p-r (:p1 this) factor)
+                :p2 (math/vec-scale p-r (:p2 this) factor)
+                :p-ref (math/vec-scale p-r (:p-ref this) factor))))
 
 
 (defn constructLine
@@ -117,8 +131,18 @@
   (rotate [this angle]
     this)
 
+  (rotate-ref [this p-r angle]
+    (let [p (math/vec-rotate (:p-center this) p-r angle)]
+      (assoc this :p-center p
+                  :p-ref p)))
+
   (scale [this factor]
-    (assoc this :radius (* (:radius this) factor))))
+    (assoc this :radius (* (:radius this) factor)))
+
+  (scale-ref [this p-r factor]
+    (assoc (scale this factor) :p-center (math/vec-scale p-r (:p-center this) factor)
+                               :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+
 
 
 (defn constructCircle [p-center radius]
@@ -157,16 +181,34 @@
              :p-end (math/vec-add p-end v)
              :p-ref (math/vec-add (:p-ref this) v))))
 
+
   (rotate [this angle]
     (-> this
       (assoc :p-start (math/vec-rotate p-start p-center angle)
              :p-end (math/vec-rotate p-end p-center angle)
              :p-ref (math/vec-rotate (:p-ref this) p-center angle))))
 
+  (rotate-ref [this p-r angle]
+    (assoc this :p-center (math/vec-rotate (:p-center this) p-r  angle)
+                :p-start (math/vec-rotate p-start p-r angle)
+                :p-end (math/vec-rotate p-end p-r angle)
+                :p-ref (math/vec-rotate (:p-ref this) p-r angle)))
+
+
   (scale [this factor]
     (assoc this :radius (* radius factor)
                 :p-start (math/vec-scale p-center p-start factor)
-                :p-end (math/vec-scale p-center p-end factor))))
+                :p-end (math/vec-scale p-center p-end factor)))
+
+  (scale-ref [this p-r factor]
+    (let [pc (math/vec-scale p-r (:p-center this) factor)
+          v (math/vec-sub pc (:p-center this))
+          radius (* radius factor)]
+      (assoc (scale this factor) :p-center pc
+                                 :radius radius
+                                 :p-ref (math/project-point-onto-circle (math/vec-add (:p-ref this) v) pc radius)
+                                 :p-start (math/project-point-onto-circle (math/vec-add (:p-start this) v) pc radius)
+                                 :p-end (math/project-point-onto-circle (math/vec-add (:p-end this) v) pc radius)))))
 
 
 (defn constructArc [p-center radius p-start p-end]
@@ -200,8 +242,11 @@
                   :p-ref (first new-p-list))))
 
   (rotate [this angle]
-    (assoc this :p-list
-                (vec (map #(math/vec-rotate % (:p-ref this) angle) p-list))))
+    (rotate-ref this (:p-ref this) angle))
+
+  (rotate-ref [this p-r angle]
+    (assoc this :p-list (vec (map #(math/vec-rotate % p-r angle) p-list))
+                :p-ref (math/vec-rotate (:p-ref this) p-r angle)))
 
   (scale [this factor]
     (let [[c1 c2] (split-with (partial math/vec-not-equals? (:p-ref this)) (:p-list this))
@@ -211,8 +256,75 @@
                   (concat
                     (reverse (rest (reductions math/vec-add (:p-ref this) cls-l)))
                     [(:p-ref this)]
-                    (rest (reductions math/vec-add (:p-ref this) cls-r)))))))
+                    (rest (reductions math/vec-add (:p-ref this) cls-r))))))
+
+  (scale-ref [this p-r factor]
+    (assoc this :p-list (map #(math/vec-scale p-r % factor) (:p-list this)))))
 
 
 (defn constructContour [p-list]
   (construct (->Contour p-list)))
+
+
+;; in addition to the rotate and scale operations with other IShapes,
+;; an additional kind of rotation and scaling is appropriate for compounds:
+;; rotate-all and scale-all perform the respective operation on every shape
+;; the compound consists of. Only accessible for compounds!
+(defn rotate-all [compound p-r angle]
+  (if-not
+    (and (satisfies? IShape compound)
+         (= (:type compound) :compound))
+    compound
+    (let [e-list (map #(rotate-ref % p-r angle) (:elems compound))]
+      (assoc compound :elems e-list
+                      :p-ref (:p-ref e-list)))))
+
+(defn scale-all [compound p-r factor]
+  (if-not
+    (and (satisfies? IShape compound)
+         (= (:type compound) :compound))
+    compound
+    (let [e-list (map #(scale-ref % p-r factor) (:elems compound))]
+      (assoc compound :elems e-list
+                      :p-ref (:p-ref e-list)))))
+
+
+;; 'compounds'
+;;
+(defrecord Compound [elem-list] IShape
+  (construct [this]
+    (-> this
+      (assoc :type :compound
+             :subtype :none
+             :visible 0
+             :p-ref (:p-ref (first elem-list))
+             :elems elem-list)))
+
+  (next-point [this p]
+    (first
+      (sort #(compare (last %1)(last %2))
+        (map #(next-point % p) (:elems this)))))
+
+  (translate [this v]
+    (let [e-list (map #(translate % v) (:elems this))]
+      (assoc this :elems e-list
+                  :p-ref (:p-ref e-list))))
+
+  (rotate [this angle]
+    (rotate-ref this (:p-ref this) angle))
+
+  (rotate-ref [this p-r angle]
+    (assoc this :elems (map #(rotate-ref % p-r angle) (:elems this))
+                :p-ref (math/vec-rotate (:p-ref this) p-r angle)))
+
+  (scale [this factor]
+    (scale-ref this (:p-ref this) factor))
+
+  (scale-ref [this p-r factor]
+    (assoc this :elems (map #(scale-ref % p-r factor) (:elems this))
+                :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+
+
+(defn constructCompound [elem-list]
+  (construct (->Compound elem-list)))
+
