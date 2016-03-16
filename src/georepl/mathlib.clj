@@ -108,11 +108,11 @@
     (vec (list (- (* c x)(* s y))
                (+ (* c y)(* s x))))))
 
-(defn vec-rotate [p p-center angle]
+(defn vec-rotate [p p-c angle]
   (vec-add
-    p-center
+    p-c
     (vec-rotate-center
-      (vec-sub p p-center)
+      (vec-sub p p-c)
       angle)))
 
 (defn project-circle [p p-center radius]
@@ -148,8 +148,8 @@
 (defn project-point-onto-circle [p center-p radius]
   (let [v (vec-sub p center-p)]
     (vec-add (vec-scal-mult (/ radius
-                                  (length v))
-                               v)
+                               (length v))
+                            v)
              center-p)))
 
 
