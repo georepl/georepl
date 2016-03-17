@@ -277,7 +277,7 @@
     compound
     (let [e-list (map #(rotate-ref % p-r angle) (:elems compound))]
       (assoc compound :elems e-list
-                      :p-ref (:p-ref e-list)))))
+                      :p-ref (:p-ref (first e-list))))))
 
 (defn scale-all [compound p-r factor]
   (if-not
@@ -286,7 +286,7 @@
     compound
     (let [e-list (map #(scale-ref % p-r factor) (:elems compound))]
       (assoc compound :elems e-list
-                      :p-ref (:p-ref e-list)))))
+                      :p-ref (:p-ref (first e-list))))))
 
 
 ;; 'compounds'
@@ -308,7 +308,7 @@
   (translate [this v]
     (let [e-list (map #(translate % v) (:elems this))]
       (assoc this :elems e-list
-                  :p-ref (:p-ref e-list))))
+                  :p-ref (:p-ref (first e-list)))))
 
   (rotate [this angle]
     (rotate-ref this (:p-ref this) angle))

@@ -209,12 +209,12 @@
 
 (deftest dash-velocity-test
   (testing "dash-velocity"
-    (is (= 0.0 (#'freehand/dash-velocity [])))
-    (is (= 0.0 (#'freehand/dash-velocity [[714 283 1405]])))
-    (is (= 0.0 (#'freehand/dash-velocity [[714 283 1405][714 283 1405]])))
-    (is (= 0.0 (#'freehand/dash-velocity [[714 283 1633][714 283 1405]])))
-    (is (= 4.0 (#'freehand/dash-velocity '([244 577 3601] [244 579 3601] [244 581 3600]))))
-    (is (math/equals? 12.369317054748535 (#'freehand/dash-velocity '([549 594 4380] [546 606 4380]))))))
+    (is (math/equals? 0.0 (#'freehand/dash-velocity [] 0 0)))
+    (is (math/equals? 0.0 (#'freehand/dash-velocity [[714 283]] 1405 1405)))
+    (is (math/equals? 0.0 (#'freehand/dash-velocity [[714 283][714 283]] 1405 1405)))
+    (is (math/equals? 0.0 (#'freehand/dash-velocity [[714 283][714 283]] 1633 1405)))
+    (is (math/equals? 4.0 (#'freehand/dash-velocity '([244 577] [244 579] [244 581]) 3601 3600)))
+    (is (math/equals? 12.369317054748535 (#'freehand/dash-velocity '([549 594] [546 606]) 4380 4380)))))
 
 
 
@@ -261,17 +261,17 @@
 
 (deftest bias-test
   (testing "bias"
-    (is (math/vec-equals? [2.0 0.1] (#'freehand/bias [2.5 1.5 2.2 1.8 2.1 1.9])))
+    (is (math/equals? [2.0 0.1] (#'freehand/bias [2.5 1.5 2.2 1.8 2.1 1.9])))
     ))
 
-(comment
 (deftest analyze-straight-line-test
   (testing "analyze-straight-line"
-    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10 10][42 -10 100]]))))
-    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10 10][42 -10 20000]]))))
-    (is (= :dashed (:type (#'freehand/analyze-straight-line [[300 10 2][4200 -10 10]]))))
-    (is (= :dashed (:type (#'freehand/analyze-straight-line [[3 10 2][42 -10 10]]))))))
+    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 10 100))))
+    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 10 20000))))
+    (is (= :dashed (:type (#'freehand/analyze-straight-line [[300 10][4200 -10]] 2 10))))
+    (is (= :dashed (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 2 10))))))
 
+(comment
 (deftest analyze-curved-shapes-test
   (testing "analyze-curved-shapes"
      (is (= :line (:type (#'freehand/analyze-curved-shapes line1 0 100))))         ;;Ok
@@ -307,3 +307,6 @@
     (is (= :contour (:type (freehand/analyze-shape V4eck))))
     ))
 
+ (testing "analyze-shape 2"
+   (let [trace '([588 142 1458224856243] [589 142 1458224856170] [588 142 1458224856160] [588 142 1458224855574])]
+     (is (= :line (:type (freehand/analyze-shape trace))))))

@@ -20,12 +20,13 @@
 (defn- coordinates [p]
   [(first p)(second p)])
 
-(defn- dash-velocity [trace]
+(defn- dash-velocity [trace t1 t2]
   (if (< (count trace) 2)
     0.0
     (let [v (math/vec-sub (last trace)(first trace))]
       (/ (math/length (coordinates v))
-         (max 1 (math/abs (timestamp v)))))))
+         (max 1 (math/abs (- t1 t2)))))))
+;         (max 1 (math/abs (timestamp v)))))))
 
 
 ; take a random subset of the contour including start and end points in order to avoid pixel-driven Manhattan geometry
@@ -59,88 +60,52 @@
 ;; helpers (statistics)
 ;;
 (defn- average [coll]
+ (when (nil? coll) (prn "average" coll))
   (/(reduce + coll)(max 1 (count coll))))
 
 (defn- bias [vals]
   (let [avg (average vals)]
     [avg (average (map (comp math/sq (partial - avg)) vals))]))
 
+(defn disjoin-plus-minus [coll]
+  (let [cl (filter (comp not math/nearly-zero?) coll)]
+    (if (empty? cl)
+      [[0] [0]]
+      [(filter pos? cl) (filter neg? cl)])))
 
+;; The curve may be changing direction quite often on pixel-level. But it may look quite smooth when you zoom out.
+;; This function gives a rough statistical estimation of the smoothness
+(defn smoothness [v-diff]
+  (let [[c-pos c-neg] (disjoin-plus-minus (map math/det v-diff (rest v-diff)))]
+    (float (/ (min (count c-pos) (count c-neg))
+              (max (count c-pos) (count c-neg))))))
 
 
 
 ;; create geometric objects from drawn input
 ;;
-(defn analyze-shape [elm-list]
-  (if (< (count elm-list) 2)
-    nil
-    (if (= (count elm-list) 2)
-      (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
-      (let [elems (dedupe (map coordinates (distribute-points elm-list)))
-            v-diff  (map math/vec-sub (rest elems) elems)
-            v-mean  (math/vec-sub (last elems)(first elems))
-            angles  (map #(math/angle v-mean %) v-diff)
-            [avg-an bias-an] (bias angles)
-            [c-pos c-neg] (math/disjoin-plus-minus (map math/det v-diff (rest v-diff)))
-
-;; NYI: REFACTOR: use something like curvature here
-            curve-ratio (float (/ (min (count c-pos) (count c-neg))
-                                  (max (count c-pos) (count c-neg))))]
-       (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
-         (if (> (dash-velocity elm-list) dash-speed)
-           (assoc (shapes/constructLine (last elems) (first elems) 0) :type :dashed)
-           (shapes/constructLine (last elems) (first elems)))
-         (if (< curve-ratio 0.25)
-           (let [[[xmin ymin][xmax ymax]] (math/box elm-list)
-                 p-center [(math/round (/ (+ xmax xmin) 2))(math/round (/ (+ ymax ymin) 2))]
-                 radius (/ (+ (- xmax xmin)(- ymax ymin)) 4)
-                 [p-start p-end] (arc-segment p-center radius elm-list)]
-             (if (math/equals? p-start p-end [0.0 0.0])
-                 (shapes/constructCircle p-center radius)
-                 (shapes/constructArc p-center radius p-start p-end)))
-           (shapes/constructContour elm-list)))))))
+(defn- analyze-straight-line [elems t1 t2]
+  (if (> (dash-velocity elems t1 t2) dash-speed)
+    (assoc (shapes/constructLine (last elems) (first elems) 0) :type :dashed)
+    (shapes/constructLine (last elems) (first elems))))
 
 
-
-
-
-;; This is the uglies function of the whole package and it needs some refactoring.
-;; A first attempt lead to funny results and requires some more attention than presently planned.
-;; So this will be treated in a sprint of its own (issue #9).
-(comment
-
-
-;; create geometric objects from drawn input
-;;
-(defn- analyze-straight-line [v]
-  (if (> (dash-velocity v) dash-speed)
-    (assoc (shapes/constructLine (last v) (first v) 0) :type :dashed)
-    (shapes/constructLine (last v) (first v))))
-
-
-(defn- analyze-curved-shapes [elm-list t1 t2]
-(prn "smoothness:" (math/smoothness elm-list))
-  (let [v-diff (map math/vec-sub (rest elm-list) elm-list)
-        angles (map #(math/angle
-                      (math/vec-sub (last elm-list)(first elm-list))
-                      %)
-                    v-diff)
+(defn analyze-curved-shapes [elems t1 t2]
+  (let [v-diff  (map math/vec-sub (rest elems) elems)
+        v-mean  (math/vec-sub (last elems)(first elems))
+        angles  (map #(math/angle v-mean %) v-diff)
         [avg-an bias-an] (bias angles)]
-(prn "Bias:" bias-an "Avg:" (math/abs avg-an))
-     (if (and (< bias-an 0.15)
-              (< (math/abs avg-an) 0.2))
-       (analyze-straight-line [(conj (vec (first elm-list)) t1)
-                               (conj (vec (last elm-list) t2))])
-       (if (< (math/smoothness elm-list) 0.25)
-         (let [[[xmin ymin][xmax ymax]] (math/box elm-list)
-               p-center [(math/round (/ (+ xmax xmin) 2))
-                         (math/round (/ (+ ymax ymin) 2))]
-               radius (/ (+ (- xmax xmin)(- ymax ymin)) 4)
-               [p-start p-end] (arc-segment p-center radius elm-list)]
-           (if (math/vec-equals? [p-start p-end] [0.0 0.0])
-               (shapes/constructCircle p-center radius)
-               (shapes/constructArc p-center radius p-start p-end)))
-         nil))))
+ (if (and (< bias-an 0.15)(< (math/abs avg-an) 0.2))
+   (analyze-straight-line elems t1 t2)
+   (if (< (smoothness v-diff) 0.25)
+     (let [[[xmin ymin][xmax ymax]] (math/box elems)
+           p-center [(math/round (/ (+ xmax xmin) 2))(math/round (/ (+ ymax ymin) 2))]
+           radius (/ (+ (- xmax xmin)(- ymax ymin)) 4)
+           [p-start p-end] (arc-segment p-center radius elems)]
+       (if (math/equals? p-start p-end [0.0 0.0])
+           (shapes/constructCircle p-center radius)
+           (shapes/constructArc p-center radius p-start p-end)))
+     nil))))
 
 
 (defn analyze-shape [elm-list]
@@ -155,4 +120,3 @@
            (if (nil? ret)
              (shapes/constructContour elm-list)
              ret))))
-)

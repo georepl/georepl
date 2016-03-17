@@ -1,7 +1,7 @@
 (ns georepl.draw-primitives
   (:require [clojure.core.match :refer [match]]
-            [quil.core :as quil]
             [georepl.mathlib :as math]
+            [quil.core :as quil]
             [quil.middleware :as m]))
 
 

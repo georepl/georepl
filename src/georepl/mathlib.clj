@@ -28,6 +28,16 @@
 (defn equals?
   ([x y]
     (if (and (coll? x)(coll? y))
+      (every? nearly-zero? (map - x y))
+      (nearly-zero? (- x y))))
+  ([x y & more]
+    (and (equals? x y)
+         (every? true? (map (partial equals? x) more)))))
+
+(comment
+(defn equals?
+  ([x y]
+    (if (and (coll? x)(coll? y))
       (nearly-zero? (reduce + (map (comp #(if (pos? %) % (* -1 %)) -) x y)))
       (nearly-zero? (- x y))))
   ([x y & more]
@@ -35,6 +45,7 @@
       (if (next more)
         (equals? y (first more) (rest more))
         (equals? y (first more))))))
+)
 
 (defn vec-sub [p q]
   (vec (map - p q)))
@@ -48,11 +59,11 @@
 (defn vec-zero? [v]
   (every? nearly-zero? v))
 
-(defn vec-equals? [v w]
-  (vec-zero? (map - v w)))
+;;(defn vec-equals? [v w]
+;;  (vec-zero? (map - v w)))
 
 (defn vec-not-equals?[p q]
-  (not (vec-equals? p q)))
+  (not (equals? p q)))
 
 (defn vec-scale [p-fix p-var factor]
   "return new p-var which is (* factor (len v)) apart from p-fix in the original direction"
@@ -228,16 +239,3 @@
      (vec (map #(reduce max %) coll))]))
 
 
-(defn disjoin-plus-minus [coll]
-  (let [cl (filter (comp not nearly-zero?) coll)]
-    (if (empty? cl)
-      [[0] [0]]
-      [(filter pos? cl) (filter neg? cl)])))
-
-;; The curve may be changing direction quite often on pixel-level. But it may look quite smooth when you zoom out.
-;; This function gives a rough statistical estimation of the smoothness
-(defn smoothness [elm-list]
-  (let [v-diff  (map vec-sub (rest elm-list) elm-list)
-        [c-pos c-neg] (disjoin-plus-minus (map det v-diff (rest v-diff)))]
-    (float (/ (min (count c-pos) (count c-neg))
-              (max (count c-pos) (count c-neg))))))

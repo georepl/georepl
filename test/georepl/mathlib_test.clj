@@ -13,13 +13,20 @@
     (is (true? (nearly-zero? (first (drop 17 (iterate (partial * 0.5) 1))))))))
 
 (deftest equals-test
-  (testing "equals"
+  (testing "equals? on scalar values"
     (is (true? (equals? 0 0.0)))
     (is (true? (equals? 0.0 0)))
     (is (true? (equals? 5 5.0)))
     (is (false? (equals? 2.0 5.0)))
     (is (true? (equals? 12.369317054748535 12.36931687685298)))
-    (is (true? (equals? 42.0 42.0)))))
+    (is (true? (equals? 42.0 42.0))))
+  (testing "equals? on collections"
+    (is (true? (equals? [0 0 0] [0.0 0.0 0.0] [0.0 0.0 0] [0.0 0 0.0])))
+    (is (true? (equals? [0.0 0.0] [0 0])))
+    (is (true? (equals? [5 2 5.0][5 2 5.0])))
+    (is (false? (equals? '(2.0 5.0) '(2.1 5.0))))
+    (is (true? (equals? [0 12.369317054748535] [0 12.369316876852980])))
+    (is (true? (equals? [42.0 9] [42 9.0])))))
 
 (deftest vector-arithmetics-test
   (let [p [-2.1 5.3]
@@ -55,15 +62,15 @@
             p-ref3 (vec-scal-mult
                      0.5
                      (vec-add p q))]
-        (is (vec-equals? p (vec-scale p-ref1 p 2.0)))
-        (is (vec-equals? q (vec-scale p-ref2 q 2.0)))
-        (is (vec-equals? [-4.65 7.45] (vec-scale p-ref3 p 2.0)))
-        (is (vec-equals? [5.55 -1.15] (vec-scale p-ref3 q 2.0)))))
+        (is (equals? p (vec-scale p-ref1 p 2.0)))
+        (is (equals? q (vec-scale p-ref2 q 2.0)))
+        (is (equals? [-4.65 7.45] (vec-scale p-ref3 p 2.0)))
+        (is (equals? [5.55 -1.15] (vec-scale p-ref3 q 2.0)))))
 
 
     (testing "orthogonal vectors"
-      (is (vec-equals? [-1.5 1.5] (vec-ortho v)))
-      (is (vec-equals? [-1.0 0.0] (vec-ortho w))))
+      (is (equals? [-1.5 1.5] (vec-ortho v)))
+      (is (equals? [-1.0 0.0] (vec-ortho w))))
 
     (testing "length and dist"
       (is (= 10.0 (length [6 8])))
@@ -101,20 +108,20 @@
   (let [p [0.0 5]
         q [-1.0 1]]
   (testing "vec-rotate-center"
-    (is (vec-equals? [-5.0 0.0] (vec-rotate-center p PI-HALF)))
-    (is (vec-equals? [0.0 -5.0] (vec-rotate-center p PI)))
-    (is (vec-equals? [-1.0 -1.0] (vec-rotate-center q PI-HALF)))
-    (is (vec-equals? [1.0 -1.0] (vec-rotate-center q PI))))))
+    (is (equals? [-5.0 0.0] (vec-rotate-center p PI-HALF)))
+    (is (equals? [0.0 -5.0] (vec-rotate-center p PI)))
+    (is (equals? [-1.0 -1.0] (vec-rotate-center q PI-HALF)))
+    (is (equals? [1.0 -1.0] (vec-rotate-center q PI))))))
 
 (deftest vec-rotate-test
   (let [p [0.0 5]
         q [-1.0 1]
         ct [2 -2]]
   (testing "vec-rotate"
-    (is (vec-equals? [-5.0 -4.0] (vec-rotate p ct PI-HALF)))
-    (is (vec-equals? [4.0 -9.0] (vec-rotate p ct PI)))
-    (is (vec-equals? [-1.0 -5.0] (vec-rotate q ct PI-HALF)))
-    (is (vec-equals? [5.0 -5.0] (vec-rotate q ct PI))))))
+    (is (equals? [-5.0 -4.0] (vec-rotate p ct PI-HALF)))
+    (is (equals? [4.0 -9.0] (vec-rotate p ct PI)))
+    (is (equals? [-1.0 -5.0] (vec-rotate q ct PI-HALF)))
+    (is (equals? [5.0 -5.0] (vec-rotate q ct PI))))))
 
 (deftest project-circle-test
   (testing "project-circle"
@@ -154,8 +161,8 @@
   (testing "intersect-circles-test"
     (let [[p q] (intersect-circles [50 50] 100 [80 60] 80)]
     (is (and
-          (vec-equals? p [140.70253 138.10760])
-          (vec-equals? q [97.29746 138.10760]))))))
+          (equals? p [140.70253 138.10760])
+          (equals? q [97.29746 138.10760]))))))
 
 (deftest intersect-lines-test
   (testing "intersect-lines"
@@ -188,7 +195,7 @@
   (testing "circumcircle"
     (let [[p r] (circumcircle [5 6][17 2][12 21])]
       (is (and
-            (vec-equals? p [13.40384 11.21153])
+            (equals? p [13.40384 11.21153])
             (equals? r 9.88861))))))
 
 (deftest round-test
@@ -202,18 +209,15 @@
   (testing "box"
     (let [coll [[-1 5][3 -3][0 0][-2 -3][5 -5][-5 2]]
           res (box coll)]
-      (is (vec-equals? [-5 -5] (first res)))
-      (is (vec-equals? [5 5] (last res))))
+      (is (equals? [-5 -5] (first res)))
+      (is (equals? [5 5] (last res))))
     (let [coll [[13 44 -7 66][-3 -42 99 -14][41 -12 -45 19][0 17 0 -55]]
           res (box coll)]
-      (is (vec-equals? [-3 -42 -45 -55] (first res)))
-      (is (vec-equals? [41 44 99 66] (last res))))
+      (is (equals? [-3 -42 -45 -55] (first res)))
+      (is (equals? [41 44 99 66] (last res))))
     (let [coll [[-13 -44 -7 -66][-3 -42 -99 -14][-41 -12 -45 -19][0 -17 0 -55]]
           res (box coll)]
-      (is (vec-equals? [-41 -44 -99 -66] (first res)))
-      (is (vec-equals? [0 -12 0 -14] (last res))))))
+      (is (equals? [-41 -44 -99 -66] (first res)))
+      (is (equals? [0 -12 0 -14] (last res))))))
 
-(deftest smoothness-test
-  (testing "smoothness"
-    (let [coll [[-5 2][-5 1][-4 0][-4 -1][-3 -1][-3 -2][-1 -2][-1 -3][0 -3][1 -2][2 -1][3 -1][3 0][4 0][4 2][5 2]]]
-      (is (equals? 0.85714 (smoothness coll))))))
+

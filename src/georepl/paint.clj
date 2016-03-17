@@ -87,6 +87,7 @@
                   :complete? true)))
 
   (mouse-dragged[this event]
+;(prn "Drawing.mouse-dragged:" (:trace this))
     (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) 1] (:trace this))
                 :show-trace? true))
 
@@ -196,9 +197,9 @@
 
   ;; cancel drawing current shape
   (mouse-dragged [this event]
+;(prn "Asking.mouse-dragged:" (:trace this))
     (if (= (:user-has? this) :started-dashing)
       this
-;;((prn "mouse-dragged:" (:trace this))
       (let [elem (freehand/analyze-shape (:trace this))]
         (if (= (:type elem) :dashed)
           (assoc this :p-cur [(:x event)(:y event)]
@@ -208,7 +209,7 @@
           (assoc this :p-cur [(:x event)(:y event)]
                       :user-has? :dragged
                       :trace (cons [(:x event)(:y event)(System/currentTimeMillis)] (:trace this)))))))
-;;)
+
 
   (mouse-moved [this event]
     (assoc this :p-cur [(:x event)(:y event)]
