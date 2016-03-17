@@ -18,9 +18,9 @@
     ))
 
 
-(deftest read-file-test
-  (testing "read-file, ... "
-    (#'elements/read-file "test/georepl/testfiles/abstract-man.txt")))
+;;(deftest read-file-test
+;;  (testing "read-file, ... "
+;;    (#'elements/read-file "test/georepl/testfiles/abstract-man.txt")))
 
 
 

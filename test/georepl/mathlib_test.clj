@@ -197,3 +197,23 @@
     (is (= 10 (round 10.0)))
     (is (= 10 (round 10.4)))
     (is (= 11 (round 10.5)))))
+
+(deftest box-test
+  (testing "box"
+    (let [coll [[-1 5][3 -3][0 0][-2 -3][5 -5][-5 2]]
+          res (box coll)]
+      (is (vec-equals? [-5 -5] (first res)))
+      (is (vec-equals? [5 5] (last res))))
+    (let [coll [[13 44 -7 66][-3 -42 99 -14][41 -12 -45 19][0 17 0 -55]]
+          res (box coll)]
+      (is (vec-equals? [-3 -42 -45 -55] (first res)))
+      (is (vec-equals? [41 44 99 66] (last res))))
+    (let [coll [[-13 -44 -7 -66][-3 -42 -99 -14][-41 -12 -45 -19][0 -17 0 -55]]
+          res (box coll)]
+      (is (vec-equals? [-41 -44 -99 -66] (first res)))
+      (is (vec-equals? [0 -12 0 -14] (last res))))))
+
+(deftest smoothness-test
+  (testing "smoothness"
+    (let [coll [[-5 2][-5 1][-4 0][-4 -1][-3 -1][-3 -2][-1 -2][-1 -3][0 -3][1 -2][2 -1][3 -1][3 0][4 0][4 2][5 2]]]
+      (is (equals? 0.85714 (smoothness coll))))))

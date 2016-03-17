@@ -85,23 +85,25 @@
 
 (defn draw-element
   ([elem]
-    (case (:type elem)
-      :point   (draw-point (:p elem))
-      :line    (when (= (:visible elem) 1)
-                 (draw-line (:p1 elem) (:p2 elem)))
-      :arc     (do
-                (draw-arc (:p-center elem)
-                          (:radius elem)
-                          (math/angle (math/vec-sub (:p-start elem)(:p-center elem)))
-                          (math/angle (math/vec-sub (:p-end elem)(:p-center elem)))))
-      :circle  (draw-circle (:p-center elem) (:radius elem))
-      :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
-      :contour (when (= (:visible elem) 1)
-                 (draw-contour (:p-list elem)))
-               (when-let [params (:params elem)]
-                 (if (= (count params) 1)
-                   (draw-point (first params))
-                   (draw-contour params)))))
+    (if (nil? elem)
+      nil
+      (case (:type elem)
+        :point   (draw-point (:p elem))
+        :line    (when (= (:visible elem) 1)
+                   (draw-line (:p1 elem) (:p2 elem)))
+        :arc     (do
+                  (draw-arc (:p-center elem)
+                            (:radius elem)
+                            (math/angle (math/vec-sub (:p-start elem)(:p-center elem)))
+                            (math/angle (math/vec-sub (:p-end elem)(:p-center elem)))))
+        :circle  (draw-circle (:p-center elem) (:radius elem))
+        :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
+        :contour (when (= (:visible elem) 1)
+                   (draw-contour (:p-list elem)))
+                 (when-let [params (:params elem)]
+                   (if (= (count params) 1)
+                     (draw-point (first params))
+                     (draw-contour params))))))
   ([elem colour]
     (when-let [colvec (colour colours)]
       (when (coll? colvec)

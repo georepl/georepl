@@ -220,9 +220,24 @@
       [center (dist b center)])))
 
 
-;;NYI: REFACTOR: delete
+;; get the minimal box containng all points of a given list
+;;
+(defn box [coord-list]
+  (let [coll (apply mapv vector coord-list)]
+    [(vec (map #(reduce min %) coll))
+     (vec (map #(reduce max %) coll))]))
+
+
 (defn disjoin-plus-minus [coll]
   (let [cl (filter (comp not nearly-zero?) coll)]
     (if (empty? cl)
       [[0] [0]]
       [(filter pos? cl) (filter neg? cl)])))
+
+;; The curve may be changing direction quite often on pixel-level. But it may look quite smooth when you zoom out.
+;; This function gives a rough statistical estimation of the smoothness
+(defn smoothness [elm-list]
+  (let [v-diff  (map vec-sub (rest elm-list) elm-list)
+        [c-pos c-neg] (disjoin-plus-minus (map det v-diff (rest v-diff)))]
+    (float (/ (min (count c-pos) (count c-neg))
+              (max (count c-pos) (count c-neg))))))

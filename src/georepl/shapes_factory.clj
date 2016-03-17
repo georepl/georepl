@@ -121,9 +121,9 @@
                                            :just-answered :center)
                                nil))
                         :g (fn[this p]
-                             (let [v (math/vec-sub p (:p-center (current-element this)))
-                                   circle (shapes/translate (current-element this) v)]
-                               (update-element this circle)))}
+                             (->> (math/vec-sub p (:p-center (current-element this)))
+                                  (shapes/translate (current-element this))
+                                  (update-element this)))}
                        {:s "define radius"
                         :f (fn[this p]
                              (if-let [circle (current-element this)]
@@ -194,9 +194,9 @@
                                            :just-answered :start)
                                nil))
                         :g (fn[this p]
-                             (let [v (math/vec-sub p (:p-start (current-element this)))
-                                   arc (shapes/translate (current-element this) v)]
-                               (update-element this arc)))}
+                             (->> (math/vec-sub p (:p-start (current-element this)))
+                                  (shapes/translate (current-element this))
+                                  (update-element this)))}
                        {:s "pick end point"
                         :f (fn[this p]
                              (if-let [arc (current-element this)]

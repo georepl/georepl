@@ -203,8 +203,8 @@
 
 (deftest timestamp-and-coordinates-test
   (testing "timestamp and coordinates"
-    (is (= (map #(%1 (second %2)(first %2)) (map freehand/timestamp line1)(map #'freehand/coordinates line1)))
-        (map reverse line1))))
+    (is (= (map #(list %1 (second %2)(first %2)) (map freehand/timestamp line1)(map #'freehand/coordinates line1))
+           (map reverse line1)))))
 
 
 (deftest dash-velocity-test
@@ -261,11 +261,34 @@
 
 (deftest bias-test
   (testing "bias"
-    (is (math/equals? 0.1 (#'freehand/bias 2.0 [2.5 1.5 2.2 1.8 2.1 1.9])))
+    (is (math/vec-equals? [2.0 0.1] (#'freehand/bias [2.5 1.5 2.2 1.8 2.1 1.9])))
     ))
 
+(comment
+(deftest analyze-straight-line-test
+  (testing "analyze-straight-line"
+    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10 10][42 -10 100]]))))
+    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10 10][42 -10 20000]]))))
+    (is (= :dashed (:type (#'freehand/analyze-straight-line [[300 10 2][4200 -10 10]]))))
+    (is (= :dashed (:type (#'freehand/analyze-straight-line [[3 10 2][42 -10 10]]))))))
 
-
+(deftest analyze-curved-shapes-test
+  (testing "analyze-curved-shapes"
+     (is (= :line (:type (#'freehand/analyze-curved-shapes line1 0 100))))         ;;Ok
+     (is (= :circle (:type (#'freehand/analyze-curved-shapes circle1 0 100))))     ;;Ok
+     (is (= :circle (:type (#'freehand/analyze-curved-shapes circle2 0 1000))))    ;;Ok
+     (is (= :circle (:type (#'freehand/analyze-curved-shapes circle3 0 1000))))    ;;Ok
+;    (is (= :arc (:type (#'freehand/analyze-curved-shapes arc3 0 1000))))          ;;Ok
+;     (is (= :arc (:type (#'freehand/analyze-curved-shapes arc4 0 1000))))
+;     (is (= :arc (:type (#'freehand/analyze-curved-shapes arc5 0 1000))))
+     (is (= :arc (:type (#'freehand/analyze-curved-shapes arc6 0 1000))))          ;;Ok
+     (is (= :arc (:type (#'freehand/analyze-curved-shapes arc7 0 1000))))          ;;Ok
+     (is (= :arc (:type (#'freehand/analyze-curved-shapes arc8 0 1000))))          ;;Ok
+;     (is (= :contour (:type (#'freehand/analyze-curved-shapes sinus1 0 1000))))
+     (is (= :contour (:type (#'freehand/analyze-curved-shapes zwo1 0 1000))))      ;;Ok
+;     (is (= :contour (:type (#'freehand/analyze-curved-shapes V4eck 0 1000))))
+))
+)
 
 (deftest analyze-shape-test
   (testing "analyze-shape"

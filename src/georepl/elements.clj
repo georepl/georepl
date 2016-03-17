@@ -1,7 +1,6 @@
 (ns georepl.elements
-  (:require [georepl.mathlib :as math]
-            [clojure.edn     :as edn]
-            [clojure.java.io :as io]))
+  (:require [georepl.mathlib :as math])
+  (:require [georepl.persistence :as pers]))
 
 (def elems (atom '()))
 
@@ -48,28 +47,13 @@
   (pop-elem))
 
 
-(defn write-file[name]
-  (try
-    (with-open [wrtr (io/writer name)]
-      (loop [coll @elems]
-        (if (empty? coll)
-          nil
-         (do
-           (.write wrtr (prn-str (first coll)))
-           (recur (rest coll))))))
-    (catch java.io.FileNotFoundException e
-      (throw e))
-    (catch Exception e
-      (throw e))))
+(defn write-elem
+  ([name]
+    (pers/write-drawing name @elems))
+  ([name elem]
+    (pers/write-drawing name [elem])))
 
 
-(defn- read-file[name]
-  (try
-    (with-open [rdr (io/reader name)]
-      (doseq [line (line-seq rdr)]
-        (push-elem (edn/read-string line))))
-      (catch java.io.FileNotFoundException e
-        (prn "Could not find file:" (:cause e))
-        nil)
-    (catch Exception e
-      (throw e))))
+(defn- slurp-elem [name]
+  (doseq [elem (pers/read-drawing name)]
+    (push-elem elem)))

@@ -8,15 +8,12 @@
             [georepl.ask :as ask]
             [georepl.shapes-factory :as shapesFactory]))
 
-
-
 ;;
 ;;helper functions
 ;;
 (defn- snap-time-exceeded? [t]
   (> (- (System/currentTimeMillis) t)
     freehand/snap-duration))
-
 
 (defn- next-point-on-element [coll p]
   (if (empty? coll)
@@ -47,9 +44,6 @@
   (update-frame [this]))
 
 
-
-
-
 ;; contract for all protocol functions
 (defn wrap [f]
   (fn wrap-inner-fn [& args]
@@ -60,7 +54,6 @@
       (when-not (satisfies? IState ret)
         (throw (ex-info "non IState-function called or missing return value (state)" {:f f :state args :new-state ret})))
       ret)))
-
 
 
 ;;
@@ -74,19 +67,16 @@
             :show-trace? false
             :complete? false)))
 
-
   (draw-temporary [this]
     (when (:show-trace? this)
       (dp/draw-element {:params (:trace this)}))
     (assoc this :complete? false))
-
 
   (mouse-pressed[this event]
     (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) 1] [])
                 :button-down-time (System/currentTimeMillis)
                 :show-trace? true
                 :complete? false))
-
 
   (mouse-released[this event]
     (if (nil? (:button-down-time this))
@@ -96,24 +86,21 @@
                   :show-trace? false
                   :complete? true)))
 
-
   (mouse-dragged[this event]
     (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) 1] (:trace this))
                 :show-trace? true))
-
 
   (mouse-moved [this event]
     this)
 
   (key-pressed [this key]
     (case key
-      :save (elements/write-file "/home/thomas/Projekte/GeoRepl/georepl/test/georepl/testfiles/x.txt")
+;;      :save (elements/write-file "/home/thomas/Projekte/GeoRepl/georepl/test/georepl/testfiles/x.txt")
       :shift  (assoc this :raw-traces true)
               this))
 
   (picked [this]
     this)
-
 
   (snapped [this]
     (if-let [[elem p d] (next-point-on-element
@@ -146,7 +133,6 @@
       (assoc this :show-trace? true)
       this))
 
-
   (update-frame [this]
     "the ordinary drawing mode update-frame"
     (if-let [t (:button-down-time this)]
@@ -164,8 +150,6 @@
                            (moved this))
                [_ true]  (dragged this)
                :else     (moved this))))))
-
-
 
 
 ;;
@@ -186,8 +170,6 @@
              :back-to-drawing false
              :user-has? :done-nothing)))
 
-
-
   (draw-temporary [this]
     (when-let [e (shapesFactory/current-element factory)]
       (dp/draw-element e :orange)
@@ -196,13 +178,11 @@
       (dp/draw-text-vec sl))
     this)
 
-
   (mouse-pressed [this event]
     (assoc this :p-cur [(:x event)(:y event)]
                 :user-has? :dragged
                 :button-down-time (System/currentTimeMillis)
                 :trace [[(:x event)(:y event)(System/currentTimeMillis)]]))
-
 
   (mouse-released [this event]
     (if (nil? (:button-down-time this))
@@ -214,11 +194,11 @@
                                :picked)
                   :trace [])))
 
-
   ;; cancel drawing current shape
   (mouse-dragged [this event]
     (if (= (:user-has? this) :started-dashing)
       this
+;;((prn "mouse-dragged:" (:trace this))
       (let [elem (freehand/analyze-shape (:trace this))]
         (if (= (:type elem) :dashed)
           (assoc this :p-cur [(:x event)(:y event)]
@@ -228,7 +208,7 @@
           (assoc this :p-cur [(:x event)(:y event)]
                       :user-has? :dragged
                       :trace (cons [(:x event)(:y event)(System/currentTimeMillis)] (:trace this)))))))
-
+;;)
 
   (mouse-moved [this event]
     (assoc this :p-cur [(:x event)(:y event)]
@@ -249,7 +229,6 @@
                            (assoc state :f-cur (:f quest) :p-cur p))
                          state)))))
 
-
   (picked [this]
     (if (nil? (:f-cur this))
       this
@@ -257,8 +236,6 @@
         (assoc this :factory fact :f-cur (shapesFactory/current-question fact)
                                   :user-has? :done-nothing)
         this)))
-
-
 
   (snapped [this]
     (if-let [[elem p d] (next-point-on-element (elements/list-elems) (:p-cur this))]
@@ -277,7 +254,6 @@
                              (:factory this)
                              (:p-cur this)))
       this))
-
 
   (moved [this]
     (if-not (nil? (:p-cur this))
@@ -314,11 +290,11 @@
                 ((wrap reset-state)
                   (->Drawing)))))))))
 
+
 ;;
 ;;
 (defn init[]
   ((wrap reset-state) (->Drawing)))
-
 
 (defn draw
   [state]
