@@ -249,7 +249,7 @@
                 :p-ref (math/vec-rotate (:p-ref this) p-r angle)))
 
   (scale [this factor]
-    (let [[c1 c2] (split-with (partial math/vec-not-equals? (:p-ref this)) (:p-list this))
+    (let [[c1 c2] (split-with (partial math/not-equals? (:p-ref this)) (:p-list this))
            cls-l (linear-scale factor (cons (:p-ref this) (reverse c1)))
            cls-r (linear-scale factor c2)]
       (assoc this :p-list

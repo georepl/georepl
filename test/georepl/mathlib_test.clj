@@ -51,10 +51,10 @@
     (testing "zero, equality and non-equality"
       (is (vec-zero? [0 0 0]))
       (is (not (vec-zero? [0 1 0])))
-      (is (vec-not-equals? p q))
-      (is (vec-not-equals? v w))
-      (is (not (vec-not-equals? p p)))
-      (is (not (vec-not-equals? w w))))
+      (is (not-equals? p q))
+      (is (not-equals? v w))
+      (is (not (not-equals? p p)))
+      (is (not (not-equals? w w))))
 
     (testing "vec-scale"
       (let [p-ref1 p
@@ -92,15 +92,17 @@
 
     (testing "angle"
       (is (nearly-zero? (angle [0 1][0 1])))
-      (is (equals? PI-HALF (angle [1 0][0 1])))
-      (is (equals? (* -1 PI-HALF) (angle [0 1][1 0])))
-      (is (nil? (angle [0 0][1 1])))
+      (is (equals? (* -1 PI-HALF) (angle [1 0][0 1])))
+      (is (equals? PI-HALF (angle [0 1][1 0])))
+      (is (nearly-zero? (angle [0 0][1 1])))
       (is (equals? (/ PI 4) (angle [42 42])))
-      (is (nil? (angle [0 1][0 0])))
-      (is (nearly-zero? (angle [574 0]))))
-
-    (testing "angle-dir-test"
-      (is (equals? 0.3947911196997611 (angle-dir [3 2][2 3])))
+      (is (nearly-zero? (angle [0 1][0 0])))
+      (is (nearly-zero? (angle [574 0])))
+      (is (nearly-zero? (angle [0 0][0 0])))
+      (is (nearly-zero? (angle [0 0][1 0])))
+      (is (nearly-zero? (angle [0 0][-1 0])))
+      (is (nearly-zero? (angle [-1 42][-1 42])))
+      (is (nearly-zero? (angle [8 -49 -1079] [8 -49 -1079])))
       )))
 
 

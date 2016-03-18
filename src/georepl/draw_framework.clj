@@ -1,8 +1,8 @@
 (ns georepl.draw-framework
   (:require [clojure.core.match :refer [match]]
-            [quil.core :as quil]
             [georepl.mathlib :as math]
             [georepl.draw-primitives :as dp]
+            [quil.core :as quil]
             [quil.middleware :as m]
             [georepl.paint :as paint]))
 

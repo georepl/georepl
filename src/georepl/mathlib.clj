@@ -15,6 +15,7 @@
 (defn asin[x] (Math/asin x))
 (defn cos[x] (Math/cos x))
 (defn sin[x] (Math/sin x))
+(defn sgn[x] (if (>= x 0.0) 1 -1))
 
 (defn nearly-zero?
   ([x epsilon]
@@ -34,19 +35,6 @@
     (and (equals? x y)
          (every? true? (map (partial equals? x) more)))))
 
-(comment
-(defn equals?
-  ([x y]
-    (if (and (coll? x)(coll? y))
-      (nearly-zero? (reduce + (map (comp #(if (pos? %) % (* -1 %)) -) x y)))
-      (nearly-zero? (- x y))))
-  ([x y & more]
-    (and (equals? x y)
-      (if (next more)
-        (equals? y (first more) (rest more))
-        (equals? y (first more))))))
-)
-
 (defn vec-sub [p q]
   (vec (map - p q)))
 
@@ -59,10 +47,7 @@
 (defn vec-zero? [v]
   (every? nearly-zero? v))
 
-;;(defn vec-equals? [v w]
-;;  (vec-zero? (map - v w)))
-
-(defn vec-not-equals?[p q]
+(defn not-equals?[p q]
   (not (equals? p q)))
 
 (defn vec-scale [p-fix p-var factor]
@@ -86,30 +71,55 @@
 (defn dot-product [v w]
   (reduce + (map * v w)))
 
-(defn angle
+(defn det [v w]
+  (let [[a b] v
+        [c d] w]
+    (- (* a d)(* c b))))
+
+(defn right-from?
+  "is point q on the right-hand side of the line from p1 to p2?"
+  ([p1 p2 q]
+    (let [v (vec-sub p2 p1)
+          w (vec-sub q p1)]
+      (neg? (det v w))))
+  ([[p1 p2] q]
+    (right-from? p1 p2 q)))
+
+(comment
+(defn _angle
   ([v]
    (let [len (length v)]
      (if (nearly-zero? len)
-       nil
-       (if (>= (/ (second v) len) 0)
+       0.0
+       (if (> (/ (second v) len) 0)
          (acos (/ (first v) len))
          (- TWO-PI (acos (/ (first v) len)))))))
   ([p q]
     (let [psi (angle p)
           phi (angle q)]
-      (if (or (nil? phi)(nil? psi))
-        nil
-       (- phi psi)))))
+      (if (or (zero? phi)(zero? psi))
+        0.0
+       (let [diff (- phi psi)]
+         (if (> (abs diff) > PI)
+           (* (sgn diff)(- (abs diff) PI))
+           diff))))))
+)
 
 
-(defn angle-dir
+(defn angle
   ([v w]
-    (let [len (* (length v)(length w))]
-      (if (nearly-zero? len)
-        nil
-        (acos (/ (dot-product v w) len)))))
+    (let [l (* (length v)(length w))]
+      (if (nearly-zero? l)
+        0.0
+        (let [dp (dot-product v w)
+              dpn (if (> (abs dp)(abs l)) l dp)
+              phi (acos (/ dpn l))]
+          (if (pos? (det v w))
+            (* -1 phi)
+            phi)))))
   ([v]
     (angle v [1 0])))
+
 
 
 (defn vec-rotate-center [p angle]
@@ -135,21 +145,6 @@
                p
                (/ radius
                   (dist p-center p)))))
-
-(defn det [v w]
-  (let [[a b] v
-        [c d] w]
-    (- (* a d)(* c b))))
-
-(defn right-from?
-  "is point q on the right-hand side of the line from p1 to p2?"
-  ([p1 p2 q]
-    (let [v (vec-sub p2 p1)
-          w (vec-sub q p1)]
-      (neg? (det v w))))
-  ([[p1 p2] q]
-    (right-from? p1 p2 q)))
-
 
 ; [0 2PI] -> [0 360[
 (defn degree [angle]

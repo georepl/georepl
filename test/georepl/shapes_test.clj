@@ -368,6 +368,12 @@
       (is (= 0         (:visible e1)))
       (is (math/equals? [150 250] (:p-ref e1))))
 
+    (testing "constructCompound with empty elements list"
+      (let [e0 (constructCompound [])]
+       (is (= :compound (:type e0)))
+       (is (= 0         (:visible e0)))
+       (is (empty? (:p-ref e0)))))
+
     (testing "next-point"
       (let [[e2 p d] (next-point e1 [210 210])]
         (is (= :point (:type e2)))

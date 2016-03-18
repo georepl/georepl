@@ -60,7 +60,7 @@
 ;; helpers (statistics)
 ;;
 (defn- average [coll]
- (when (nil? coll) (prn "average" coll))
+;(prn "average" coll)
   (/(reduce + coll)(max 1 (count coll))))
 
 (defn- bias [vals]
@@ -90,6 +90,7 @@
     (shapes/constructLine (last elems) (first elems))))
 
 
+;; the algorithm in this function requires a bit of refactoring.
 (defn analyze-curved-shapes [elems t1 t2]
   (let [v-diff  (map math/vec-sub (rest elems) elems)
         v-mean  (math/vec-sub (last elems)(first elems))
