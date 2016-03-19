@@ -27,10 +27,13 @@
   (paint/draw state))
 
 (defn- key-pressed [state key]
+(prn "KeyCode:" (:key-code key))
   (case (:key-code key)
     10  (paint/key-pressed state :ok)
     27  (paint/key-pressed state :esc)
+    82  (paint/key-pressed state :redo)
     83  (paint/key-pressed state :save)
+    90  (paint/key-pressed state :undo)
         (paint/key-pressed state (:key key))))
 
 ;;
@@ -47,5 +50,6 @@
     :mouse-dragged (paint/wrap paint/mouse-dragged)
     :mouse-moved (paint/wrap paint/mouse-moved)
     :key-pressed key-pressed
+    :on-close (paint/wrap paint/on-close)
     :middleware [m/fun-mode])
   nil)

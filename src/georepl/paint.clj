@@ -35,7 +35,6 @@
   (mouse-released[this event])
   (mouse-dragged[this event])
   (mouse-moved[this event])
-  (key-pressed [this key])
   (picked [this])
   (snapped [this])
   (dashed [this])
@@ -94,11 +93,6 @@
   (mouse-moved [this event]
     this)
 
-  (key-pressed [this key]
-    (case key
-;;      :save (elements/write-file "/home/thomas/Projekte/GeoRepl/georepl/test/georepl/testfiles/x.txt")
-      :shift  (assoc this :raw-traces true)
-              this))
 
   (picked [this]
     this)
@@ -215,21 +209,6 @@
     (assoc this :p-cur [(:x event)(:y event)]
                 :user-has? :moved))
 
-  (key-pressed [this key]
-    (let [ret (ask/key-pressed key (:question this))
-          state (assoc this :question (first ret))]
-      (if (nil? (second ret))
-        state
-        (let [quest (second ret)
-              fact (:factory state)
-              e (shapesFactory/current-element fact)]
-          (case (:type quest)
-            :immediate   (assoc state :factory ((:f quest) fact (:p-cur state)))
-            :next-input  (let [p (:p-ref e)]
-(prn "State: " state)
-                           (assoc state :f-cur (:f quest) :p-cur p))
-                         state)))))
-
   (picked [this]
     (if (nil? (:f-cur this))
       this
@@ -294,6 +273,23 @@
 
 ;;
 ;;
+(defn key-pressed [this key]
+  (case key
+    :save   (do
+              (elements/spit-drawing)
+              this)
+    :undo   (do
+              (elements/pop-elem)
+              this)
+    :redo   this
+    :shift  (assoc this :raw-traces true)
+            this))
+
+(defn on-close [this]
+  (do
+    (elements/spit-drawing)
+    this))
+
 (defn init[]
   ((wrap reset-state) (->Drawing)))
 

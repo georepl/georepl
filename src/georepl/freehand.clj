@@ -73,7 +73,7 @@
       [[0] [0]]
       [(filter pos? cl) (filter neg? cl)])))
 
-;; The curve may be changing direction quite often on pixel-level. But it may look quite smooth when you zoom out.
+;; The curve may be changing direction quite often on pixel-level. But it may look quite smoMaybeoth when you zoom out.
 ;; This function gives a rough statistical estimation of the smoothness
 (defn smoothness [v-diff]
   (let [[c-pos c-neg] (disjoin-plus-minus (map math/det v-diff (rest v-diff)))]
@@ -90,7 +90,7 @@
     (shapes/constructLine (last elems) (first elems))))
 
 
-;; the algorithm in this function requires a bit of refactoring.
+;; the algorithm in this function requires a bit of refactoring (issue #10)
 (defn analyze-curved-shapes [elems t1 t2]
   (let [v-diff  (map math/vec-sub (rest elems) elems)
         v-mean  (math/vec-sub (last elems)(first elems))

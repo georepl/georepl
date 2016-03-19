@@ -6,15 +6,18 @@
 
 (defn main[]
   ;; select drawing if available or start with empty one
-
+  (elements/slurp-drawing "workbench/test.grl")
 
   ;; initialize drawing compound with empty shapes list
+(comment
   (elements/push-elem
-    (assoc (shapes/constructCompound []) :subtype :drawing))
-
+    (assoc (shapes/constructCompound []) :subtype :drawing
+                                         :filename "workbench/test.grl"))
+)
 
   ;; start drawing
-  (frame/init-frame))
+  (frame/init-frame)
+)
 
 
 ;; start the show ...

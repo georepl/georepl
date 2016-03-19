@@ -279,7 +279,7 @@
     (testing "analyze-curved-shapes"
       (is (= :line (:type (#'freehand/analyze-curved-shapes (map butlast line1) 0 100))))
 ;; these tests should do. The fact that they don't shows a weakness of the algorithm at smaller scales.
-;; We need to think about a better way to identify arcs and circles
+;; We need to think about a better way to identify arcs and circles (issue #10)
 ;;      (is (= :arc (:type (#'freehand/analyze-curved-shapes a1 0 100))))
 ;;      (is (= :arc (:type (#'freehand/analyze-curved-shapes a3 0 1000))))
 ;;      (is (= :circle (:type (#'freehand/analyze-curved-shapes (concat a1 a3) 0 1000))))
