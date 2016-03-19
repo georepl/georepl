@@ -2,11 +2,14 @@
   (:require [clojure.test :refer :all]
             [georepl.mathlib :as math]
             [georepl.shapes :as shapes]
+            [georepl.elements :as elements]
             [georepl.shapes-factory :refer :all]))
 
 
 (deftest point-factory-test
-  (let [e (shapes/constructPoint [100 100])
+  (let [drw (elements/push-elem
+              (assoc (shapes/constructCompound []) :subtype :drawing))
+        e (shapes/constructPoint [100 100])
         fact (createShapeFactory e)]
     (testing "create and current-element"
       (is (= e (current-element fact)))
@@ -33,7 +36,9 @@
 
 
 (deftest line-factory-test
-  (let [e (shapes/constructLine [20 50][100 100])
+  (let [drw (elements/push-elem
+              (assoc (shapes/constructCompound []) :subtype :drawing))
+        e (shapes/constructLine [20 50][100 100])
         fact (createShapeFactory e)]
     (testing "create and current-element"
       (is (= e (current-element fact)))
@@ -57,7 +62,9 @@
 
 
 (deftest circle-factory-test
-  (let [e (shapes/constructCircle [80 30] 50)
+  (let [drw (elements/push-elem
+              (assoc (shapes/constructCompound []) :subtype :drawing))
+        e (shapes/constructCircle [80 30] 50)
         fact (createShapeFactory e)]
     (testing "create and current-element"
       (is (= e (current-element fact)))
@@ -86,7 +93,9 @@
 
 
 (deftest arc-factory-test
-  (let [e (shapes/constructArc [80 30] 50 [30 30][130 30])
+  (let [drw (elements/push-elem
+              (assoc (shapes/constructCompound []) :subtype :drawing))
+        e (shapes/constructArc [80 30] 50 [30 30][130 30])
         fact (createShapeFactory e)]
     (testing "create and current-element"
       (is (= e (current-element fact)))
@@ -121,7 +130,9 @@
 
 
 (deftest contour-factory-test
-  (let [coll [[80 30] [50 70] [30 30][130 30]]
+  (let [drw (elements/push-elem
+              (assoc (shapes/constructCompound []) :subtype :drawing))
+        coll [[80 30] [50 70] [30 30][130 30]]
         e (shapes/constructContour coll)
         fact (createShapeFactory e)]
     (testing "create and current-element"
@@ -143,6 +154,3 @@
       (is (fn? (current-question fact))))
     (testing "finish"
       (is (= :contour (finish fact))))))
-
-
-

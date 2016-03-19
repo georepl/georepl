@@ -27,7 +27,7 @@
   (paint/draw state))
 
 (defn- key-pressed [state key]
-(prn "KeyCode:" (:key-code key))
+;(prn "KeyCode:" (:key-code key))
   (case (:key-code key)
     10  (paint/key-pressed state :ok)
     27  (paint/key-pressed state :esc)

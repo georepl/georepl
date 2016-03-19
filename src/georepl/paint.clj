@@ -58,10 +58,11 @@
 ;;
 ;; the regular-drawing-mode implementation
 ;;
-(defrecord Drawing [] IState
+(defrecord Drawing [redo-stack] IState
   (reset-state [this]
     (-> this
-     (assoc :button-down-time nil
+     (assoc :redo-stack redo-stack
+            :button-down-time nil
             :trace []
             :show-trace? false
             :complete? false)))
@@ -104,15 +105,17 @@
       ((wrap reset-state)
         (->Asking p
                   (shapesFactory/createShapeFactory
-                    (freehand/analyze-shape [p p]))))
+                    (freehand/analyze-shape [p p]))
+                  (:redo-stack this)))
       this))
 
   ;; remove the previously drawn element and return to initial drawing mode
   (dashed [this]
-    (assoc this :show-trace? false :trace [])
-    (elements/pop-elem)
-    ((wrap reset-state)
-      (->Drawing)))
+    (if-let [e (elements/pop-elem)]
+      ((wrap reset-state)
+         (->Drawing (cons e (:redo-stack this))))
+      ((wrap reset-state)
+         (->Drawing []))))
 
   (dragged [this]
     (let [elem (freehand/analyze-shape (map butlast (:trace this)))
@@ -121,7 +124,8 @@
         (dashed this)
         ((wrap reset-state)
           (->Asking (last (:trace this))
-                    fact)))))
+                    fact
+                    (:redo-stack this))))))
 
   (moved [this]
     (if (> (count (:trace this)) 2)
@@ -154,10 +158,11 @@
   state)
 
 
-(defrecord Asking [p-cur factory] IState
+(defrecord Asking [p-cur factory redo-stack] IState
   (reset-state [this]
    (-> this
-      (assoc :p-cur p-cur
+      (assoc :redo-stack redo-stack
+             :p-cur p-cur
              :f-cur (shapesFactory/current-question (:factory this))
 ;             :question (ask/ask p-cur (shapesFactory/current-question (:factory this)))
              :factory factory
@@ -226,7 +231,7 @@
 
   (dashed [this]
     ((wrap reset-state)
-      (->Drawing)))
+      (->Drawing (:redo-stack this))))
 
   (dragged [this]
     (if-not (nil? (:p-cur this))
@@ -266,22 +271,28 @@
                       fact (shapesFactory/createShapeFactory elem)]
                   ((wrap reset-state)
                     (->Asking (:p-cur state)
-                              fact)))
+                              fact
+                              [])))
                 ((wrap reset-state)
-                  (->Drawing)))))))))
+                  (->Drawing [])))))))))
 
 
-;;
+;; framework functions outside of the interface above
 ;;
 (defn key-pressed [this key]
   (case key
     :save   (do
               (elements/spit-drawing)
               this)
-    :undo   (do
-              (elements/pop-elem)
+    :undo   (if-let [e (elements/pop-elem)]
+              (assoc this :redo-stack
+                          (cons e (:redo-stack this)))
               this)
-    :redo   this
+    :redo   (if (empty? (:redo-stack this))
+              this
+              (do
+                (elements/push-elem (first (:redo-stack this)))
+                (assoc this :redo-stack (rest (:redo-stack this)))))
     :shift  (assoc this :raw-traces true)
             this))
 
@@ -291,7 +302,7 @@
     this))
 
 (defn init[]
-  ((wrap reset-state) (->Drawing)))
+  ((wrap reset-state) (->Drawing [])))
 
 (defn draw
   [state]

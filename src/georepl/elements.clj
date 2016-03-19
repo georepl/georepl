@@ -26,17 +26,30 @@
   (swap! drawings-stack conj e))
 
 
+;; The drawings stack is empty iff no push has been performed yet.
+;; The first pushed element must be a drawing which is guaranteed to survive as first element on the stack.
+;; If a drawing is pushed this goes straigth to the stack (redo)
+;; Other elements are added to a copy of tos before this is written to the stack
+;; So, the stack is a stack of drawings representing all states of the current session
 (defn push-elem [e]
-  (if (and (empty? @drawings-stack)(= (:type e) :compound)(= (:subtype e) :drawing))
-    (push-drawing e)
+  (if (empty? @drawings-stack)
+    (if (or (not= (:type e) :compound)(not= (:subtype e) :drawing))
+      (throw (ex-info "Element stack corrupt!" {:bottom-element-on-stack e}))
+      (push-drawing e))
     (let [cur (tos)]
-      (push-drawing
-        (assoc cur :elems (cons e (:elems cur)))))))
+      (if (and (= (:type e) :compound)(= (:subtype e) :drawing))
+        (push-drawing e)
+        (push-drawing
+          (assoc cur :elems (cons e (:elems cur))))))))
+
 
 (defn pop-elem []
   (let [e (tos)]
-    (swap! drawings-stack rest)
-      e))
+    (if (= 1 drawings-stack-length)
+      nil
+      (do
+        (swap! drawings-stack rest)
+        e))))
 
 
 
@@ -51,11 +64,12 @@
 
 
 (defn spit-drawing []
-  (if (not (or (= (:type (tos)) :compound) (= (:subtype (tos)) :drawing)))
-    (prn "throw Invalid format")
-    (if (empty? (:elems (tos)))
+  (let [tos (tos)]
+    (when (or (not= (:type tos) :compound)(not= (:subtype tos) :drawing))
+      (throw (ex-info "Element stack corrupt!" {:bottom-element-on-stack tos})))
+    (if (empty? (:elems tos))
        nil
-       (spit (:filename (tos)) (prn-str (tos))))))
+       (spit (:filename tos) (prn-str tos)))))
 
 (defn slurp-drawing [name]
   (push-elem (read-string (slurp name))))
