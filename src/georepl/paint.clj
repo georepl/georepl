@@ -134,11 +134,12 @@
 
   (update-frame [this]
     "the ordinary drawing mode update-frame"
-    (if-let [t (:button-down-time this)]
-      (if (snap-time-exceeded? t)
-        (snapped this)
-        this)
-      (let [trace (:trace this)]
+    (let [t (:button-down-time this)
+          trace (:trace this)]
+      (if (not (nil? t))
+        (if (and (snap-time-exceeded? t)(<= (count trace) 3))
+          (snapped this)
+          this)
         (match [(count trace) (:complete? this)]
                [0 _]     this
                [1 _]     (if (snap-time-exceeded? (freehand/timestamp (butlast (first trace))))

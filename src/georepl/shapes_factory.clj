@@ -207,17 +207,15 @@
                                            :just-answered :end)
                                nil))
                         :g (fn[this p]
-                             (let [p-s (:p-start (current-element this))
-                                   p-e (:p-end (current-element this))
-                                   p-c (:p-center (current-element this))
-                                   factor (/ (math/dist p-s p)
-                                             (math/dist p-s p-e))
-                                   new-p-c  (math/vec-scale p-s p-c factor)]
+                             (let [arc (current-element this)
+                                   factor (/ (math/dist (:p-start arc) p)
+                                             (math/dist (:p-start arc) (:p-end arc)))
+                                   new-p-c  (math/vec-scale (:p-start arc) (:p-center arc) factor)]
                                (if-not (math/nearly-zero? factor)
                                  (update-element this (shapes/constructArc
                                                       new-p-c
-                                                      (math/dist p-s new-p-c)
-                                                      p-s
+                                                      (math/dist (:p-start arc) new-p-c)
+                                                      (:p-start arc)
                                                       p))
                                  this)))}
                        {:s "define point on circle"

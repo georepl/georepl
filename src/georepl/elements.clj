@@ -28,14 +28,14 @@
 
 ;; The drawings stack is empty iff no push has been performed yet.
 ;; The first pushed element must be a drawing which is guaranteed to survive as first element on the stack.
-;; If a drawing is pushed this goes straigth to the stack (redo)
+;; If a drawing is pushed this goes straight to the stack (redo)
 ;; Other elements are added to a copy of tos before this is written to the stack
 ;; So, the stack is a stack of drawings representing all states of the current session
 (defn push-elem [e]
   (if (empty? @drawings-stack)
-    (if (or (not= (:type e) :compound)(not= (:subtype e) :drawing))
-      (throw (ex-info "Element stack corrupt!" {:bottom-element-on-stack e}))
-      (push-drawing e))
+    (if (and (= (:type e) :compound)(= (:subtype e) :drawing))
+      (push-drawing e)
+      (throw (ex-info "Element stack corrupt!" {:bottom-element-on-stack e})))
     (let [cur (tos)]
       (if (and (= (:type e) :compound)(= (:subtype e) :drawing))
         (push-drawing e)
@@ -55,11 +55,16 @@
 
 ;; regular elements have visibility > 0
 ;; others like compound elements have no visibility of their own since they are visible through their constituents and have visibility < 0
+(defn list-elems-part [elem]
+  (if (= (:type elem) :compound)
+    (map list-elems-part (:elems elem))
+    elem))
+
+
 (defn list-elems []
-  (let [cur (tos)]
-    (filter #(> (:visible %) 0) (:elems cur))))
-
-
+  (let [cur (tos)
+        e-list (flatten (list-elems-part cur))]
+    (filter #(> (:visible %) 0) e-list)))
 
 
 
@@ -69,7 +74,13 @@
       (throw (ex-info "Element stack corrupt!" {:bottom-element-on-stack tos})))
     (if (empty? (:elems tos))
        nil
-       (spit (:filename tos) (prn-str tos)))))
+       (do
+       (spit (:filename tos) (pr-str tos))))))
 
-(defn slurp-drawing [name]
-  (push-elem (read-string (slurp name))))
+(defn slurp-drawing
+  ([name]
+    (push-elem (read-string (slurp name))))
+  ([name f]
+    (let [drw (read-string (slurp name))
+          s (pr-str drw)]
+      (push-elem (f drw)))))

@@ -4,7 +4,8 @@
             [georepl.draw-primitives :as dp]
             [quil.core :as quil]
             [quil.middleware :as m]
-            [georepl.paint :as paint]))
+            [georepl.paint :as paint]
+))
 
 
 
@@ -26,7 +27,7 @@
   (quil/background 255)
   (paint/draw state))
 
-(defn- key-pressed [state key]
+(defn- key-pressed-paint [state key]
 ;(prn "KeyCode:" (:key-code key))
   (case (:key-code key)
     10  (paint/key-pressed state :ok)
@@ -39,7 +40,7 @@
 ;;
 ;; main
 ;;
-(defn init-frame []
+(defn init-frame-paint [size]
   (quil/defsketch GeoRepl
     :size [800 800]
     :setup setup
@@ -49,7 +50,7 @@
     :mouse-released (paint/wrap paint/mouse-released)
     :mouse-dragged (paint/wrap paint/mouse-dragged)
     :mouse-moved (paint/wrap paint/mouse-moved)
-    :key-pressed key-pressed
+    :key-pressed key-pressed-paint
     :on-close (paint/wrap paint/on-close)
     :middleware [m/fun-mode])
   nil)

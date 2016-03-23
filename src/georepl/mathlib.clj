@@ -85,27 +85,6 @@
   ([[p1 p2] q]
     (right-from? p1 p2 q)))
 
-(comment
-(defn _angle
-  ([v]
-   (let [len (length v)]
-     (if (nearly-zero? len)
-       0.0
-       (if (> (/ (second v) len) 0)
-         (acos (/ (first v) len))
-         (- TWO-PI (acos (/ (first v) len)))))))
-  ([p q]
-    (let [psi (angle p)
-          phi (angle q)]
-      (if (or (zero? phi)(zero? psi))
-        0.0
-       (let [diff (- phi psi)]
-         (if (> (abs diff) > PI)
-           (* (sgn diff)(- (abs diff) PI))
-           diff))))))
-)
-
-
 (defn angle
   ([v w]
     (let [l (* (length v)(length w))]

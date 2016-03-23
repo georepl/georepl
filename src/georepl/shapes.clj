@@ -308,7 +308,7 @@
   (translate [this v]
     (let [e-list (map #(translate % v) (:elems this))]
       (assoc this :elems e-list
-                  :p-ref (:p-ref (first e-list)))))
+                  :p-ref (math/vec-add (:p-ref this) v))))
 
   (rotate [this angle]
     (rotate-ref this (:p-ref this) angle))
@@ -327,4 +327,6 @@
 
 (defn constructCompound [elem-list]
   (construct (->Compound elem-list)))
+
+
 
