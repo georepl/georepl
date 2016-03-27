@@ -291,14 +291,14 @@
 
 ;; 'compounds'
 ;;
-(defrecord Compound [elem-list] IShape
+(defrecord Compound [elems] IShape
   (construct [this]
     (-> this
       (assoc :type :compound
              :subtype :none
              :visible 0
-             :p-ref (:p-ref (first elem-list))
-             :elems elem-list)))
+             :p-ref (:p-ref (first elems)))))
+;             :elems elm-list)))
 
   (next-point [this p]
     (first
@@ -325,8 +325,48 @@
                 :p-ref (math/vec-scale p-r (:p-ref this) factor))))
 
 
-(defn constructCompound [elem-list]
-  (construct (->Compound elem-list)))
+(defn constructCompound [elm-list]
+  (construct (->Compound elm-list)))
 
 
 
+;; 'text'
+;;
+(defrecord Text [s top-left bottom-right] IShape
+  (construct [this]
+    (-> this
+      (assoc :type :text
+             :visible 1
+             :top-left top-left
+             :bottom-right bottom-right
+             :p-ref (math/vec-scale top-left bottom-right 0.5)
+             :str s)))
+
+  (next-point [this p]
+    [this (:p this) (math/dist p (:p-ref this))])
+
+  (translate [this v]
+    (assoc this :top-left (math/vec-add (:top-left this) v)
+                :bottom-right (math/vec-add (:bottom-right this) v)
+                :p-ref (math/vec-add (:p-ref this) v)))
+
+  (rotate [this angle]
+    (rotate-ref this (:p-ref this) angle))
+
+  (rotate-ref [this p-r angle]
+    (assoc this :top-left (math/vec-rotate (:top-left this) p-r angle)
+                :bottom-right (math/vec-rotate (:bottom-right this) p-r angle)
+                :p-ref p-r))
+
+  (scale [this factor]
+    (scale-ref this (:p-ref this) factor))
+
+  (scale-ref [this p-r factor]
+    (assoc this :top-left (math/vec-scale p-r (:top-left this) factor)
+                :bottom-right (math/vec-scale p-r (:bottom-right this) factor)
+                :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+
+
+
+(defn constructText [s top-left bottom-right]
+  (construct (->Text s top-left bottom-right)))

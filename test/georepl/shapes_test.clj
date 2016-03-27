@@ -437,3 +437,70 @@
         (is (math/equals? [100 350] (:p-ref (last (:elems e2)))))
         (is (math/equals? [90 150] (:p-ref (first (reverse (butlast (:elems e2)))))))))
     ))
+
+
+(deftest text-test
+  (let [e1 (constructText "What the hack!" [100 100][350 80])]
+    (testing "constructText"
+      (is (= :text    (:type e1)))
+      (is (= 1         (:visible e1)))
+      (is (= "What the hack!" (:str e1)))
+      (is (math/equals? [225 90] (:p-ref e1)))
+      (is (math/equals? [100 100] (:top-left e1)))
+      (is (math/equals? [350 80] (:bottom-right e1))))
+
+    (testing "next-point"
+      (let [[e2 p d] (next-point e1 [50 50])]
+        (is (= (:type e1)(:type e2)))
+        (is (= (:visible e1) (:visible e2)))
+        (is (= (:str e1)(:str e2)))
+        (is (math/equals? (:p-ref e1) (:p-ref e2)))
+        (is (math/equals? (:top-left e1) (:top-left e2)))
+        (is (math/equals? (:bottom-right e1) (:bottom-right e2)))
+        (is (math/equals? (* d d) 32225))))
+
+    (testing "translate"
+      (let [e2 (translate e1 [100 50])]
+        (is (= (:type e1)(:type e2)))
+        (is (= (:visible e1) (:visible e2)))
+        (is (= (:str e1)(:str e2)))
+        (is (math/equals? [325 140] (:p-ref e2)))
+        (is (math/equals? [200 150] (:top-left e2)))
+        (is (math/equals? [450 130] (:bottom-right e2)))))
+
+    (testing "rotate"
+      (let [e2 (rotate e1 math/PI-HALF)]
+        (is (= (:type e1)(:type e2)))
+        (is (= (:visible e1) (:visible e2)))
+        (is (= (:str e1)(:str e2)))
+        (is (math/equals? (:p-ref e1) (:p-ref e2)))
+        (is (math/equals? [215.0 -35.0] (:top-left e2)))
+        (is (math/equals? [235.0 215.0] (:bottom-right e2)))))
+
+    (testing "rotate-ref"
+      (let [e2 (rotate-ref e1 [-50 50] math/PI-HALF)]
+        (is (= (:type e1)(:type e2)))
+        (is (= (:visible e1) (:visible e2)))
+        (is (= (:str e1)(:str e2)))
+        (is (math/equals? [-50 50] (:p-ref e2)))
+        (is (math/equals? [-100 200] (:top-left e2)))
+        (is (math/equals? [-79.99999999999997 450.0] (:bottom-right e2)))))
+
+    (testing "scale"
+      (let [e2 (scale e1 3.0)]
+        (is (= (:type e1)(:type e2)))
+        (is (= (:visible e1) (:visible e2)))
+        (is (= (:str e1)(:str e2)))
+        (is (math/equals? (:p-ref e1) (:p-ref e2)))
+        (is (math/equals? [-150.0 120.0] (:top-left e2)))
+        (is (math/equals? [600.0 60.0] (:bottom-right e2)))))
+
+    (testing "scale-ref"
+      (let [e2 (scale-ref e1 [50 50] 0.5)]
+        (is (= (:type e1)(:type e2)))
+        (is (= (:visible e1) (:visible e2)))
+        (is (= (:str e1)(:str e2)))
+        (is (math/equals? [137.5 70.0] (:p-ref e2)))
+        (is (math/equals? [75 75] (:top-left e2)))
+        (is (math/equals? [200.0 65.0] (:bottom-right e2)))))
+))

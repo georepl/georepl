@@ -11,7 +11,7 @@
 (def drawings-stack (atom '()))
 
 
-(defn- clear []
+(defn clear []
   (swap! drawings-stack empty))
 
 

@@ -15,12 +15,17 @@
 ;;
 ;; primitives
 ;;
-(defn- draw-text [s top-left bottom-right]
-  (quil/text s (first top-left)
-               (second top-left)
-               (first bottom-right)
-               (second bottom-right)))
-
+(defn- draw-text
+  ([s top-left bottom-right]
+    (quil/text s (first top-left)
+                 (second top-left)
+                 (first bottom-right)
+                 (second bottom-right)))
+  ([s top-left bottom-right colour]
+    (do
+      (apply quil/fill (:black colours))
+      (draw-text s top-left bottom-right)
+      (quil/no-fill))))
 
 (defn text-height [height]
   (quil/text-size height))
@@ -97,7 +102,7 @@
                             (math/angle (math/vec-sub (:p-start elem)(:p-center elem)))
                             (math/angle (math/vec-sub (:p-end elem)(:p-center elem)))))
         :circle  (draw-circle (:p-center elem) (:radius elem))
-        :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem))
+        :text    (draw-text (:str elem) (:top-left elem) (:bottom-right elem) :black)
         :contour (when (= (:visible elem) 1)
                    (draw-contour (:p-list elem)))
                  (when-let [params (:params elem)]
