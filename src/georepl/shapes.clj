@@ -20,8 +20,7 @@
     (-> this
       (assoc :type :point
              :visible 1
-             :p-ref p
-             :p p)))
+             :p-ref p)))
 
   (next-point [this p]
     [this (:p this) (math/dist p (:p this))])
@@ -61,9 +60,7 @@
     (-> this
       (assoc :type :line
              :visible 1
-             :p-ref p1
-             :p1 p1
-             :p2 p2)))
+             :p-ref p1)))
 
   (next-point [this p]
     (let [l1 (math/dist p (:p1 this))
@@ -111,9 +108,7 @@
     (-> this
       (assoc :type :circle
              :visible 1
-             :p-ref p-center
-             :p-center p-center
-             :radius radius)))
+             :p-ref p-center)))
 
   (next-point [this p]
     (let [l1 (math/dist p (:p-center this))
@@ -157,10 +152,6 @@
     (-> this
       (assoc :type :arc
              :visible 1
-             :p-center p-center
-             :radius radius
-             :p-start p-start
-             :p-end p-end
              :p-ref p-start)))
 
 
@@ -228,8 +219,7 @@
     (-> this
       (assoc :type :contour
              :visible 1
-             :p-ref (first p-list)
-             :p-list (vec p-list))))
+             :p-ref (first p-list))))
 
   (next-point [this p]
     (first
@@ -263,7 +253,7 @@
 
 
 (defn constructContour [p-list]
-  (construct (->Contour p-list)))
+  (construct (->Contour (vec p-list))))
 
 
 ;; in addition to the rotate and scale operations with other IShapes,
@@ -298,7 +288,6 @@
              :subtype :none
              :visible 0
              :p-ref (:p-ref (first elems)))))
-;             :elems elm-list)))
 
   (next-point [this p]
     (first
@@ -325,22 +314,19 @@
                 :p-ref (math/vec-scale p-r (:p-ref this) factor))))
 
 
-(defn constructCompound [elm-list]
-  (construct (->Compound elm-list)))
+(defn constructCompound [elems]
+  (construct (->Compound elems)))
 
 
 
 ;; 'text'
 ;;
-(defrecord Text [s top-left bottom-right] IShape
+(defrecord Text [str top-left bottom-right] IShape
   (construct [this]
     (-> this
       (assoc :type :text
              :visible 1
-             :top-left top-left
-             :bottom-right bottom-right
-             :p-ref (math/vec-scale top-left bottom-right 0.5)
-             :str s)))
+             :p-ref (math/vec-scale top-left bottom-right 0.5))))
 
   (next-point [this p]
     [this (:p this) (math/dist p (:p-ref this))])
@@ -368,5 +354,5 @@
 
 
 
-(defn constructText [s top-left bottom-right]
-  (construct (->Text s top-left bottom-right)))
+(defn constructText [str top-left bottom-right]
+  (construct (->Text str top-left bottom-right)))

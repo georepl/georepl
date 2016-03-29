@@ -40,7 +40,7 @@
 ;;
 ;; main
 ;;
-(defn init-frame-paint [size]
+(defn init-frame-paint []
   (quil/defsketch GeoRepl
     :size [800 800]
     :features [:resizable]
@@ -58,13 +58,10 @@
   nil)
 
 
-
-
-
 ;;
 ;; gallery framework functions
 ;;
-(defn- setup-gallery [size]
+(defn- setup-gallery [size drw-list f-on-close]
   (quil/background 255)
   (quil/no-fill)
 
@@ -72,16 +69,19 @@
 ;(quil/frame-rate 5)
 
   ; initial state
-  (gallery/init size))
+  (gallery/init size drw-list f-on-close))
 
 
-(defn- draw-gallery[state]
+(defn- draw-gallery [state]
   (quil/background 255)
   (gallery/draw state))
 
+(defn- update-frame [state]
+  (if (true? (:complete state))
+    (quil/exit)
+    state))
 
 (defn- key-pressed-gallery [state key]
-(prn "KeyCode:" (:key-code key))
   (case (:key-code key)
     10  (gallery/key-pressed state :ok)
     27  (gallery/key-pressed state :esc)
@@ -93,14 +93,13 @@
 ;;
 ;; main
 ;;
-(defn init-frame-gallery [size]
+(defn init-frame-gallery [drw-list f-on-close]
   (quil/defsketch GeoRepl
     :size [600 600]
     :title "GeoRepl Gallery - Select A Drawing"
-    :setup (fn [](setup-gallery size))
+    :setup (fn [](setup-gallery [600 600] drw-list f-on-close))
     :draw draw-gallery
-    :update gallery/update-frame
-    :mouse-pressed gallery/mouse-pressed
+    :update update-frame
     :mouse-released gallery/mouse-released
     :mouse-moved gallery/mouse-moved
     :key-pressed key-pressed-gallery

@@ -1,0 +1,1 @@
+#georepl.shapes.Compound{:elems (#georepl.shapes.Line{:p1 [281 313], :p2 [287 318], :type :line, :visible 1, :p-ref [287 318]}), :type :compound, :subtype :drawing, :visible 0, :p-ref [300.0 300.0], :filename "workbench/test.grl", :size [600 600]}

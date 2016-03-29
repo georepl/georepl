@@ -2,7 +2,8 @@
   (:require [georepl.mathlib :as math]
             [georepl.shapes :as shapes]
             [clojure.edn     :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [georepl.configuration :as config]))
 
 
 ;; drawings-stack is a stack of drawing compound elements. The top pf stack drawing is the current one.
@@ -67,15 +68,18 @@
     (filter #(> (:visible %) 0) e-list)))
 
 
-
 (defn spit-drawing []
   (let [tos (tos)]
     (when (or (not= (:type tos) :compound)(not= (:subtype tos) :drawing))
       (throw (ex-info "Element stack corrupt!" {:bottom-element-on-stack tos})))
     (if (empty? (:elems tos))
        nil
-       (do
-       (spit (:filename tos) (pr-str tos))))))
+       (let [filename (apply str
+                             (concat
+                               (:drawings-directory config/Configuration)
+                               (:filename tos)))]
+         (spit filename (pr-str tos))))))
+
 
 (defn slurp-drawing
   ([name]
