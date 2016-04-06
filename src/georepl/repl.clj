@@ -43,12 +43,14 @@
     (let [s (repl/response-values
               (repl/message (:repl state) {:op :eval :code (:curline state)}))]
 
-      (terminal/put-string (:term state) (prn-str (if (coll? s) (first s) s))))
+      (terminal/put-string (:term state) (prn-str (if (coll? s) (first s) s)))
+      (assoc (setpos state 0 (inc (:j state))) :curline ""
+                                               :history (vec (dedupe (cons (:curline state) (:history state))))
+                                               :history-index 0))
   (catch Exception e
-(prn "Ex:" e)
-    ((terminal/put-string (:term state) "Maschin' putt!"))))
+    (terminal/put-string (:term state) (prn-str (:cause e)))
+    (assoc (setpos state 0 (inc (:j state))) :curline ""))))
 
-  (assoc (setpos state 0 (inc (:j state))) :curline ""))
 
 
 (defn- edit-chr [state]
@@ -56,7 +58,7 @@
     (case chr
       :home      (setpos state 0 (:j state))
 
-      :end       (setpos state 1000 (:j state))
+      :end       (setpos state 10000 (:j state))
 
       :left      (setpos state (dec (:i state)) (:j state))
 
@@ -75,9 +77,12 @@
                          s (apply str (concat s1 (rest s2)))]
                      (setpos (output state s) i-new (:j state))))
 
-      :up        state
+      :up        (let [idx (:history-index state)
+                       len (max 0 (dec (count (:history state))))]
+                    (assoc (output state (nth (:history state) idx)) :history-index (min len (inc idx))))
 
-      :down      state
+      :down      (let [idx (:history-index state)]
+                    (assoc (output state (nth (:history state) idx)) :history-index (max 0 (dec idx))))
 
       :enter     (assoc state :done true)
 
@@ -109,5 +114,6 @@
       (editor (assoc {} :term term
                         :repl (repl/client conn 1000)
                         :prefix "GeoRepl=> "
+                        :history []
                         :j 0)))))
 
