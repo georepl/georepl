@@ -1,13 +1,15 @@
-# The Paint Layer
+# the Paint Layer
 
-The paint layer is the functionally lowest level of all of GeoRepl's layers. The implementation of the paint layer is built on top of quil. It contains the rudimentary operations and events of a sketchpad: get mouse- and keyboard events and draw some geometric primitives such as points, lines, and arcs. At runtime, however, the paint layer is on top of the control flow because it incorporates the quil runtime loop.
+The implementation of the paint layer is built on top of a set of a framework's event functions. It contains the rudimentary operations and events of a sketchpad: get mouse- and keyboard events and draw some geometric primitives such as points, lines, and arcs.
+
+The paint layer handles a loop which is provided by the runtime framework. Depending on the configured frame rate the draw function is called repeatedly. Before every call to draw the update function is called. Mouse events listened to by the paint layer are: mouse-pressed, mouse-released, mouse-moved and mouse-dragged. The basic operations, i.e. line, arc, and ellipse functions are used to display graphic primitives. More complex geometric objects than lines, arcs and circles are handled by other GeoRepl layers and drawn as a sequence of lines/arcs. A list of points to be drawn as arbitrary geometric object will be refered to as contour in the following.
+
+There are two types of items which can be displayed: first of all, the trace of pixels just drawn. These data are temporary and maintained within the paint layer.
+Second, the items to be displayed permanently. They are provided for by the elements layer as a list of primitives. The paint layer's draw function takes this list iteratively and displays them.
 
 
-The paint layer consists of a loop which is provided by the quil runtime framework. Depending on the configured frame rate the draw function is called repeatedly. Before every call to draw the update function is called. Mouse events listened to by the paint layer are: mouse-pressed, mouse-released, mouse-moved and mouse-dragged. The line, arc and ellipse functions of quil are used to display graphic primitives where quil/ellipse is used to display circles and points. More complex geometric objects than lines, arcs and circles are handled by other GeoRepl layers and drawn as a sequence of lines/arcs. The list of points to be drawn as arbitrary geometric object will be refered to as contour in the following.
+# the IState interface
 
-There are three types of items which can be displayed: first of all, the trace of pixels just drawn. These data are temporary and maintained within the paint layer.
-Second, the items to be displayed permanently. They are privided for by the elements layer as a list of primitives. The paint layer's draw function takes this list iteratively and displays them.
-Third, the the item(s) currently under construction (the workbench stack). These data are temporary as well and may change from one frame to another. In contrast to the trace pixels, however, they reside within the scope of the elements layer.
 
 
 The main data structure of this layer is a set called state comprising of these elements:
@@ -85,7 +87,7 @@ More details on dashing in the description of the freehand layer.
 
 
 
-#Primitives
+# Primitives
 
 The drawing primitives provided for by GeoRepl are:
 draw-text, draw-point, draw-line, and draw-arc.
@@ -94,7 +96,7 @@ draw-text, draw-point, draw-line, and draw-arc.
 
 
 
-#Hints for Programmers
+# Hints for Programmers
 
 The status engine relies on most functions to return the current/modified state. A function
 

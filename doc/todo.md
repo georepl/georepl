@@ -4,15 +4,15 @@
 *change existing elements
 -distinguish create- and change-mode
 --dash and partial delete
--save and load elements
+DONE-save and load elements
 -connect a repl
 -provide for algebraic expressions for repl in shapes/shapes_factory
 -documentation in /doc
 -write unit tests for near-complete test coverage; employ cloverage
--introduce compound objects
+Done-introduce compound objects
 -implement point-list
 -use ask to clarify ambigous situations
--introduce a (simple) ticket system
+DONE-introduce a (simple) ticket system
 -world – screen coordinates transformation
 
 

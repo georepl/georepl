@@ -18,9 +18,7 @@
 
 (defn- done [state]
   ((:f-on-close state) (second (:selected state)))
-  state)
-
-(defn reset-state [state]
+  (dp/exit)
   state)
 
 
@@ -39,10 +37,6 @@
   (if-let [fr (first (filter #(in-box (:x event)(:y event) %) (:frames state)))]
     (assoc state :selected fr)
     state))
-
-
-(defn on-close [state]
-  state)
 
 
 (defn key-pressed [state key]
@@ -91,11 +85,11 @@
                              (map frame-list
                                   (:elems drw-list))))
         frames (map #(cons %2 %1) (map extract frames-raw) (range))]
-    (reset-state (assoc {} :elems (elements/list-elems)
-                           :frames frames
-                           :selected (first frames)
-                           :complete false
-                           :f-on-close f-on-close))))
+   (assoc {} :elems (elements/list-elems)
+             :frames frames
+             :selected (first frames)
+             :complete false
+             :f-on-close f-on-close)))
 
 
 (defn draw [state]

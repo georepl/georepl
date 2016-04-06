@@ -5,6 +5,7 @@
             [georepl.shapes :as shapes]
             [georepl.mathlib :as math]
             [georepl.elements :as elements]
+            [georepl.repl :as repl]
             [georepl.configuration :as config]))
 
 
@@ -49,12 +50,14 @@
     #(shapes/translate %1 (math/vec-sub %2 (:p-ref %1)))
       icons p-center-list)))
 
+
 ;; helper to find a number as part of a string
 (defn- str2int [s]
   (let [sNum (re-find #"[0-9]*" s)]
     (if (empty? sNum)
       nil
      (Integer/parseInt sNum))))
+
 
 ;; create a filename which doesn't exist yet. The file name pattern is <root from config><first new number>.grl
 (defn- new-unique-filename [files]
@@ -113,7 +116,8 @@
 (defn- start-new-drawing [size files]
   (frame/init-frame-paint)
   (elements/clear)
-  (elements/push-elem (create-new-drawing size files)))
+  (elements/push-elem (create-new-drawing size files))
+  (repl/init))
 
 
 ;; Start paint frame with the selected drawing. This code is injected into draw-framework
@@ -125,16 +129,18 @@
       (start-new-drawing size files)
       (let [drw (file2drawing filename)]
         (elements/push-elem drw)
-        (frame/init-frame-paint)))))
+        (frame/init-frame-paint)
+        (repl/init)))))
 
 
 (defn- main[]
-  (let [size [600 600]]
-    (let [files (.list (io/file (:drawings-directory config/Configuration)))]
-      (if-let [drw-list (select-drawing files size)]
-        ;; start gallery
-        (frame/init-frame-gallery drw-list start-existing-drawing)
-        (start-new-drawing size files)))))
+  (let [size [600 600]
+        files (.list (io/file (:drawings-directory config/Configuration)))]
+    (if-let [drw-list (select-drawing files size)]
+      ;; start gallery
+      (frame/init-frame-gallery drw-list start-existing-drawing)
+      (start-new-drawing size files))))
+
 
 
 ;; start the show ...

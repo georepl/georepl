@@ -12,6 +12,11 @@
               :black [0 0 0]
               :white [255 255 255]})
 
+
+;; cleanup old drawing before initializing new sketch
+(defn exit[]
+  (quil/exit))
+
 ;;
 ;; primitives
 ;;
@@ -27,12 +32,19 @@
       (draw-text s top-left bottom-right)
       (quil/no-fill))))
 
+
 (defn text-height [height]
   (quil/text-size height))
 
 
 (defn text-width [coll]
   (reduce max (map quil/text-width coll)))
+
+
+(defn draw-str [s x1 y1 x2 y2]
+  (apply quil/fill (:black colours))
+  (quil/text s x1 y1 x2 y2)
+  (quil/no-fill))
 
 
 (defn draw-point

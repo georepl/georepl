@@ -38,7 +38,7 @@
 
 
 ;;
-;; main
+;; main paint
 ;;
 (defn init-frame-paint []
   (quil/defsketch GeoRepl
@@ -91,10 +91,10 @@
         (gallery/key-pressed state (:key key))))
 
 ;;
-;; main
+;; main gallery
 ;;
 (defn init-frame-gallery [drw-list f-on-close]
-  (quil/defsketch GeoRepl
+  (quil/defsketch Gallery
     :size [600 600]
     :title "GeoRepl Gallery - Select A Drawing"
     :setup (fn [](setup-gallery [600 600] drw-list f-on-close))
@@ -103,7 +103,7 @@
     :mouse-released gallery/mouse-released
     :mouse-moved gallery/mouse-moved
     :key-pressed key-pressed-gallery
-    :on-close gallery/on-close
     :middleware [m/fun-mode])
   nil)
+
 

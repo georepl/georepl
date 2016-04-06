@@ -56,7 +56,7 @@
 
 ;; regular elements have visibility > 0
 ;; others like compound elements have no visibility of their own since they are visible through their constituents and have visibility < 0
-(defn list-elems-part [elem]
+(defn- list-elems-part [elem]
   (if (= (:type elem) :compound)
     (map list-elems-part (:elems elem))
     elem))
