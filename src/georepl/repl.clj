@@ -1,8 +1,7 @@
 (ns georepl.repl
   (:require [lanterna.terminal :as terminal]
             [clojure.tools.nrepl.server :as nrepl]
-            [clojure.tools.nrepl :as repl]
-            [georepl.elements :as elements]))
+            [clojure.tools.nrepl :as repl]))
 
 
 ;; start the nRepl server
@@ -52,7 +51,6 @@
     (assoc (setpos state 0 (inc (:j state))) :curline ""))))
 
 
-
 (defn- edit-chr [state]
   (let [chr (terminal/get-key-blocking (:term state))]
     (case chr
@@ -77,15 +75,23 @@
                          s (apply str (concat s1 (rest s2)))]
                      (setpos (output state s) i-new (:j state))))
 
-      :up        (let [idx (:history-index state)
-                       len (max 0 (dec (count (:history state))))]
-                    (assoc (output state (nth (:history state) idx)) :history-index (min len (inc idx))))
+      :up        (let [len (max 0 (dec (count (:history state))))
+                       idx (:history-index state)]
+(prn "UP, len:" len "idx:" idx)
+                   (setpos
+                     (assoc
+                       (output state (nth (:history state) idx)) :history-index (min len (inc idx)))
+                         10000 (:j state)))
 
-      :down      (let [idx (:history-index state)]
-                    (assoc (output state (nth (:history state) idx)) :history-index (max 0 (dec idx))))
+      :down      (let [len (max 0 (dec (count (:history state))))
+                       idx (:history-index state)]
+(prn "DOWN, len:" len "idx:" idx)
+                   (setpos
+                     (assoc
+                       (output state (nth (:history state) idx)) :history-index (max 0 (dec idx)))
+                         10000 (:j state)))
 
       :enter     (assoc state :done true)
-
 
                  (if (and (not= (type chr) clojure.lang.Keyword) (>= (int chr) 32) (<= (int chr) 126))
                    (let [[s1 s2] (split-at (:i state) (:curline state))
@@ -117,3 +123,5 @@
                         :history []
                         :j 0)))))
 
+(defn exit [state]
+  (terminal/stop (:term state)))
