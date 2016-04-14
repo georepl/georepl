@@ -117,7 +117,7 @@
   (frame/init-frame-paint)
   (elements/clear)
   (elements/push-elem (create-new-drawing size files))
-  (repl/init))
+  (repl/start))
 
 
 ;; Start paint frame with the selected drawing. This code is injected into draw-framework
@@ -130,7 +130,7 @@
       (let [drw (file2drawing filename)]
         (elements/push-elem drw)
         (frame/init-frame-paint)
-        (repl/init)))))
+        (repl/start)))))
 
 
 (defn- main[]

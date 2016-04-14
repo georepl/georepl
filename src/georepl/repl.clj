@@ -1,5 +1,6 @@
 (ns georepl.repl
   (:require [lanterna.terminal :as terminal]
+            [georepl.elements :as elements]
             [clojure.tools.nrepl.server :as nrepl]
             [clojure.tools.nrepl :as repl]))
 
@@ -8,14 +9,18 @@
 (defonce server (nrepl/start-server :port 7888))
 
 
-(defn- output [state s]
-  (let [linelen (max (count s) (count (:curline state)))
-        sblank  (apply str (repeat (max 0 (- linelen (count s))) \space))]
-    (terminal/move-cursor (:term state) 0 (:j state))
-    (terminal/put-string (:term state) (:prefix state))
-    (terminal/move-cursor (:term state) (count (:prefix state)) (:j state))
-    (terminal/put-string (:term state) (apply str (concat s sblank)))
-    (assoc state :curline s)))
+(defn- output
+  ([state s]
+(prn "Immediate")
+    (let [linelen (first (terminal/get-size (:term state)))
+          cblk    (repeat linelen \space)
+          cout    (concat (:prefix state) s cblk)]
+      (terminal/move-cursor (:term state) 0 (:j state))
+      (terminal/put-string (:term state) (apply str cout))
+      (assoc state :curline s)))
+  ([state]
+(prn "Indirect")
+    (output state "")))
 
 
 (defn- setpos [state i j]
@@ -28,15 +33,18 @@
 
 
 (defn- reset [state]
-  (output (assoc state :curline ""
-                       :done false
-                       :i (count (:prefix state))
-                       :j (inc (:j state)))
-          ""))
+  (assoc state :curline ""
+               :done false
+               :i (count (:prefix state))
+               :j (inc (:j state))))
+
+
+(defn- next-line [state]
+  (terminal/move-cursor (:term state) 0 (inc (:j state))))
 
 
 (defn- evaluate [state]
-  (terminal/move-cursor (:term state) 0 (inc (:j state)))
+  (next-line state)
 
   (try
     (let [s (repl/response-values
@@ -52,8 +60,10 @@
 
 
 (defn- edit-chr [state]
-  (let [chr (terminal/get-key-blocking (:term state))]
+  (let [chr (terminal/get-key (:term state))]
     (case chr
+      nil        state
+
       :home      (setpos state 0 (:j state))
 
       :end       (setpos state 10000 (:j state))
@@ -100,28 +110,47 @@
                    state))))
 
 
+(defn- on-change [state]
+  (if-let [s (elements/curform)]
+    (-> (assoc state :curline s :done true)
+        (evaluate)
+        (reset)
+        (output))
+    state))
+
+
 (defn- editor [state]
-  (loop [st (reset state)]
-    (if (:done st)
-      (recur (edit-chr (reset (evaluate st))))
-      (recur (edit-chr st)))))
+  (loop [st (output (reset state))]
+;(prn "STATE:" (dissoc st :term :repl :prefix :history))
+    (if (:exit st)
+      (exit st)
+      (if (:done st)
+        (recur (edit-chr (output (reset (evaluate st)))))
+        (recur (edit-chr (on-change st)))))))
 
 
-(defn init []
+; start a lantern terminal
+(defn- init []
   (let [term (terminal/get-terminal :swing)]
-
-    ;; start a lantern terminal
     (terminal/start term)
+    (assoc {} :term term
+              :prefix "GeoRepl=> "
+              :history []
+              :j 0)))
 
-    ;; start nRepl server ...
-    ;; ... and connect to the nRepl server ...
-    ;; ... and return current state
-    (with-open [conn (repl/connect :port 7888)]
-      (editor (assoc {} :term term
-                        :repl (repl/client conn 1000)
-                        :prefix "GeoRepl=> "
-                        :history []
-                        :j 0)))))
+
+;; start nRepl server ...
+;; ... and connect to the nRepl server ...
+;; ... and return current state
+(defn- with-repl [state f]
+  (with-open [conn (repl/connect :port 7888)]
+    (f (assoc state :repl (repl/client conn 1000)))))
+
+
+(defn start []
+  (with-repl (init) editor))
+
 
 (defn exit [state]
   (terminal/stop (:term state)))
+

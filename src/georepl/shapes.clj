@@ -10,7 +10,8 @@
   (rotate[this angle])
   (rotate-ref[this p angle])
   (scale[this factor])
-  (scale-ref[this p factor]))
+  (scale-ref[this p factor])
+  (form [this]))
 
 
 ;; 'point' basic shape
@@ -44,8 +45,10 @@
   (scale-ref [this p-r factor]
     (-> this
       (assoc :p (math/vec-scale p-r (:p this) factor)
-             :p-ref (math/vec-scale p-r (:p-ref this) factor)))))
+             :p-ref (math/vec-scale p-r (:p-ref this) factor))))
 
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 (defn constructPoint [p]
   (construct (->Point p)))
@@ -89,7 +92,10 @@
   (scale-ref [this p-r factor]
     (assoc this :p1 (math/vec-scale p-r (:p1 this) factor)
                 :p2 (math/vec-scale p-r (:p2 this) factor)
-                :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+                :p-ref (math/vec-scale p-r (:p-ref this) factor)))
+
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 
 (defn constructLine
@@ -136,8 +142,11 @@
 
   (scale-ref [this p-r factor]
     (assoc (scale this factor) :p-center (math/vec-scale p-r (:p-center this) factor)
-                               :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+                               :p-ref (math/vec-scale p-r (:p-ref this) factor)))
 
+
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 
 (defn constructCircle [p-center radius]
@@ -199,8 +208,11 @@
                                  :radius radius
                                  :p-ref (math/project-point-onto-circle (math/vec-add (:p-ref this) v) pc radius)
                                  :p-start (math/project-point-onto-circle (math/vec-add (:p-start this) v) pc radius)
-                                 :p-end (math/project-point-onto-circle (math/vec-add (:p-end this) v) pc radius)))))
+                                 :p-end (math/project-point-onto-circle (math/vec-add (:p-end this) v) pc radius))))
 
+
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 (defn constructArc [p-center radius p-start p-end]
   (construct (->Arc p-center radius p-start p-end)))
@@ -249,8 +261,11 @@
                     (rest (reductions math/vec-add (:p-ref this) cls-r))))))
 
   (scale-ref [this p-r factor]
-    (assoc this :p-list (map #(math/vec-scale p-r % factor) (:p-list this)))))
+    (assoc this :p-list (map #(math/vec-scale p-r % factor) (:p-list this))))
 
+
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 (defn constructContour [p-list]
   (construct (->Contour (vec p-list))))
@@ -311,8 +326,11 @@
 
   (scale-ref [this p-r factor]
     (assoc this :elems (map #(scale-ref % p-r factor) (:elems this))
-                :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+                :p-ref (math/vec-scale p-r (:p-ref this) factor)))
 
+
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 (defn constructCompound [elems]
   (construct (->Compound elems)))
@@ -350,8 +368,11 @@
   (scale-ref [this p-r factor]
     (assoc this :top-left (math/vec-scale p-r (:top-left this) factor)
                 :bottom-right (math/vec-scale p-r (:bottom-right this) factor)
-                :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+                :p-ref (math/vec-scale p-r (:p-ref this) factor)))
 
+
+  (form [this]
+    (pr-str (format "def %s" (:name this)) this)))
 
 
 (defn constructText [str top-left bottom-right]

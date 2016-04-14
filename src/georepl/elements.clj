@@ -1,7 +1,7 @@
 (ns georepl.elements
-  (:require [georepl.mathlib :as math]
-            [georepl.shapes :as shapes]
-            [georepl.repl :as repl]
+  (:require [clojure.string  :as str]
+            [georepl.mathlib :as math]
+            [georepl.shapes  :as shapes]
             [clojure.edn     :as edn]
             [clojure.java.io :as io]
             [georepl.configuration :as config]))
@@ -11,7 +11,7 @@
 ;; Walking down the stack rewinds the former states of the drawing (undo).
 ;; Every time a drawing is changed a new version of the drawing compound is pushed onto the stack.
 ;; The elements map contains a list of currently displayed shapes for performance reasons.
-(def elements (atom '()))
+(def elements (atom []))
 
 
 ;; reinitialize the whole elements stack
@@ -24,15 +24,24 @@
 
 
 (defn- tos []
-  (first @elements))
+  (last @elements))
 
 
 (defn- newest-shape []
-  (first (:elems (:drw-elem (tos)))))
+  (last (:elems (:drw-elem (tos)))))
 
 
 (defn- shapes-count []
   (count (:elems (:drw-elem (tos)))))
+
+
+; reads and removes the string representing the latest operation on an element.
+(defn curform []
+  (if-let [s (:to-repl (tos))]
+    (do
+      (swap! elements assoc-in [0 :to-repl] nil)
+      s)
+    nil))
 
 
 (defn- collect-shapes [elem]
@@ -41,27 +50,28 @@
     elem))
 
 
-(defn- push-drawing [elem]
+(defn- push-drawing [drw elem]
   (assert
-    (and (= (:type elem) :compound)(= (:subtype elem) :drawing))
-    (prn-str "Element stack corrupt! {:bottom-element-on-stack" elem "}"))
+    (and (= (:type drw) :compound)(= (:subtype drw) :drawing))
+    (prn-str "Element stack corrupt! :bottom-element-on-stack" drw))
   (let [shapes-list (filter
                       #(> (:visible %) 0)
-                      (flatten (collect-shapes elem)))]
-    (swap! elements  conj {:drw-elem elem :shapes-list shapes-list :watch-fn (:watch-fn (tos))})
-    elem))
+                      (flatten (collect-shapes drw)))
+        e-str (if (nil? elem) nil (pr-str elem))
+        new-drw {:drw-elem drw :shapes-list shapes-list :to-repl e-str}]
+    (swap! elements  conj new-drw)
+    (if (nil? elem) drw elem)))
 
 
 ;; The drawings stack is empty iff no push has been performed yet.
-;; The first pushed element must be a drawing which is guaranteed to survive as first element on the stack.
-;; If a drawing is pushed this goes straight to the stack where it can be accessed using tos.
-;; So, the stack represents all states of the current session's drawing.
+;; The first pushed element is either a drawing loaded from a file or an empty one.
+;; Every change of the current drawing's elements results in a new drawing which goes on top of this stack.
+;; So the current drawing's elements can be accessed using tos.
 (defn push-elem [e]
   (if (and (= (:type e) :compound)(= (:subtype e) :drawing))
-    (push-drawing e)
+    (push-drawing e nil)
     (let [drw (:drw-elem (tos))]
-      (push-drawing (assoc drw :elems (cons e (:elems drw))))
-      e)))
+      (push-drawing (assoc drw :elems (conj (:elems drw) e)) e))))
 
 
 (defn pop-elem []
@@ -96,3 +106,18 @@
     (let [drw (read-string (slurp name))
           s (pr-str drw)]
       (push-elem (f drw)))))
+
+
+(defn- next-unused-index [idx-coll]
+  (if (nil? idx-coll)
+    1
+    (inc (Integer/parseInt (apply str (rest idx-coll))))))
+
+(defn unique-name [s]
+  (->> (list-elems)
+       (map :name)
+       (filter #(= \L (first %)))
+       (sort #(compare (count %1)(count %2)))
+       (last)
+       (next-unused-index)
+       (format "%s%d" s)))
