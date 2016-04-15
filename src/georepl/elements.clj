@@ -39,7 +39,7 @@
 (defn curform []
   (if-let [s (:to-repl (tos))]
     (do
-      (swap! elements assoc-in [0 :to-repl] nil)
+      (swap! elements assoc-in [(dec (elements-length)) :to-repl] nil)
       s)
     nil))
 
