@@ -57,7 +57,7 @@
   (let [shapes-list (filter
                       #(> (:visible %) 0)
                       (flatten (collect-shapes drw)))
-        e-str (if (nil? elem) nil (pr-str elem))
+        e-str (if (nil? elem) nil (format "(def %s %s)" (:name elem) (pr-str elem)))
         new-drw {:drw-elem drw :shapes-list shapes-list :to-repl e-str}]
     (swap! elements  conj new-drw)
     (if (nil? elem) drw elem)))
