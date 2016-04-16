@@ -5,7 +5,7 @@
 
 
 (def drw {:type :compound :subtype :drawing :elems [] :filename "/testfiles/temp.grl"})
-(def e1 {:type :point :visible 1 :p [567 524] :p-ref [567 524]})
+(def e1 {:type :point :visible 1 :p [567 524] :p-ref [567 524] :name "P1"})
 (def e2 {:type :circle :visible 1 :p-center [567 524] :radius 30 :p-ref [567 524]})
 (def e3 {:type :line :visible 1 :p1 [300 250] :p2 [567 524] :p-ref [567 524]})
 (def e4 {:type :line :visible 1 :p1 [125 300] :p2 [570 520] :p-ref [570 520]})
@@ -76,7 +76,7 @@
     (is (nil? (elements/curform))))
   (testing "curform after pushing a shape"
     (#'elements/push-elem e1)
-    (is (= (pr-str e1) (elements/curform))))
+    (is (= (format "(def P1 %s)" (pr-str e1)) (elements/curform))))
   (testing "curform after pushing a shape and reading from repl"
     (#'elements/push-elem e2)
 ;;    (is (= (pr-str e2) (elements/curform)))
