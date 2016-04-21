@@ -33,7 +33,7 @@
       (is (fn? (current-question fact))))
     (testing "finish"
       (is (= :point (finish fact)))
-      (is (= "P1" (:name (#'elements/newest-shape)))))))
+      (is (= "Pnt1" (:name (#'elements/newest-shape)))))))
 
 
 (deftest line-factory-test
@@ -60,7 +60,7 @@
       (is (fn? (current-question fact))))
     (testing "finish"
       (is (= :line (finish fact)))
-      (is (= "L1" (:name (#'elements/newest-shape)))))))
+      (is (= "Ln1" (:name (#'elements/newest-shape)))))))
 
 
 (deftest circle-factory-test
@@ -92,7 +92,7 @@
       (is (fn? (current-question fact))))
     (testing "finish"
       (is (= :circle (finish fact)))
-      (is (= "C1" (:name (#'elements/newest-shape)))))))
+      (is (= "Cir1" (:name (#'elements/newest-shape)))))))
 
 
 (deftest arc-factory-test
@@ -130,7 +130,7 @@
       (is (fn? (current-question fact))))
     (testing "finish"
       (is (= :arc (finish fact)))
-      (is (= "A1" (:name (#'elements/newest-shape)))))))
+      (is (= "Arc1" (:name (#'elements/newest-shape)))))))
 
 
 (deftest contour-factory-test

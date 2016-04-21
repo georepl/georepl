@@ -50,7 +50,7 @@
 
   (finish [this]
     (elements/push-elem
-      (assoc elem :name (elements/unique-name "P")))
+      (assoc elem :name (elements/unique-name "Pnt")))
     :point))
 
 
@@ -101,7 +101,7 @@
 
   (finish [this]
     (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "L")))
+      (assoc (current-element this) :name (elements/unique-name "Ln")))
     :line))
 
 
@@ -173,7 +173,7 @@
 
   (finish [this]
     (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "C")))
+      (assoc (current-element this) :name (elements/unique-name "Cir")))
     :circle))
 
 
@@ -267,7 +267,7 @@
 
   (finish [this]
     (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "A")))
+      (assoc (current-element this) :name (elements/unique-name "Arc")))
     :arc))
 
 

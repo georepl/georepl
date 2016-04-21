@@ -7,3 +7,6 @@
 ;;    (is (nil? (#'dp/draw-text "Test" [0 0][250 30])))))
 
 
+;(deftest quil-basics
+;  (testing "text-width"
+;    (is (= 10 (dp/text-width "B42")))))

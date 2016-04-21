@@ -54,7 +54,7 @@
     (assoc st :curline ""
               :j (inc (:j state))
               :history (vec (dedupe (cons (:curline st) (:history st))))
-              :history-index 0)))
+              :history-index (inc (:history-index st)))))
 
 
 (defn- home [state]
@@ -92,17 +92,21 @@
 (defn- up [state]
   (let [len (max 0 (dec (count (:history state))))
         idx (:history-index state)]
-    (end
-      (assoc
-        (output state (nth (:history state) idx)) :history-index (min len (inc idx))))))
+    (if (neg? idx)
+      state
+      (end
+        (assoc
+          (output state (nth (:history state) idx)) :history-index (min len (inc idx)))))))
 
 
 (defn- down [state]
   (let [len (max 0 (dec (count (:history state))))
         idx (:history-index state)]
-    (end
-      (assoc
-        (output state (nth (:history state) idx)) :history-index (max 0 (dec idx))))))
+    (if (neg? idx)
+      state
+      (end
+        (assoc
+          (output state (nth (:history state) idx)) :history-index (max 0 (dec idx)))))))
 
 
 (defn- enter [state]
@@ -148,7 +152,6 @@
 
 (defn- editor [state]
   (loop [st (output (reset state) "")]
-;(prn "STATE:" (dissoc st :term :repl :prefix :history))
     (if (:exit st)
       (exit st)
       (if (:done st)
@@ -163,10 +166,11 @@
     (assoc {} :term term
               :prefix "GeoRepl=> "
               :history []
+              :history-index -1
               :j 0)))
 
 
-;; start nRepl server ...
+;; start nRepl client ...
 ;; ... and connect to the nRepl server ...
 ;; ... and return current state
 (defn- with-repl [state f]

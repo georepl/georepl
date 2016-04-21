@@ -33,7 +33,7 @@
                      :subtype :frame)]
     (shapes/scale
       (assoc drawing :elems (cons frm (:elems drawing)))
-         ratio)))
+        ratio)))
 
 
 ;; order a list of icons to fit in a box of the given size

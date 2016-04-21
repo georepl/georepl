@@ -13,6 +13,7 @@
 ;;
 (defn- setup-paint []
   (quil/background 255)
+  (quil/text-size 10)
   (quil/no-fill)
 
 ;; reduced frame rate for testing purposes
