@@ -6,7 +6,5 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.match "0.3.0-alpha4"]
                  [org.clojure/tools.nrepl "0.2.11"]
-                 [clojure-lanterna "0.9.4"]
-                 [quil "2.4.0"]
-                 [lein-light-nrepl "0.3.2"]]
+                 [quil "2.4.0"]]
   :profiles {:dev {:plugins [[lein-cloverage "1.0.6"]]}})

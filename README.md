@@ -4,7 +4,7 @@ A Clojure program designed to let you do Constructive Geometry and combine your 
 
 ## Usage
 
-The program uses quil (https://github.com/quil/quil). To start the framework call the main function in georepl/src/georepl/main.clj
+The program uses quil (https://github.com/quil/quil). To start the framework call the main function in georepl/src/georepl/main.clj. Then connect with the port configured in georepl/src/georepl/configuration.clj using an nRepl client of your choice.
 
 ## License
 
