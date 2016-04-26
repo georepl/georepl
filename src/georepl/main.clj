@@ -116,8 +116,9 @@
 (defn- start-new-drawing [size files]
   (frame/init-frame-paint)
   (elements/clear)
-  (elements/push-elem (create-new-drawing size files))
-  (repl/start))
+  (let [[server upd-f](repl/start)]
+    (elements/register upd-f))
+  (elements/push-elem (create-new-drawing size files)))
 
 
 ;; Start paint frame with the selected drawing. This code is injected into draw-framework

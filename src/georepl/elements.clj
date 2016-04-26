@@ -11,7 +11,7 @@
 ;; Walking down the stack rewinds the former states of the drawing (undo).
 ;; Every time a drawing is changed a new version of the drawing compound is pushed onto the stack.
 ;; The elements map contains a list of currently displayed shapes for performance reasons.
-(def elements (atom []))
+(def elements (atom {:stack [] :upd-f nil}))
 
 (defn- out[]
   (prn elements))
@@ -19,28 +19,20 @@
 
 ;; reinitialize the whole elements stack
 (defn clear []
-  (swap! elements empty))
+  (swap! elements assoc :stack []))
+;;  (swap! elements empty))
 
 
 (defn- elements-length []
-  (count @elements))
+  (count (:stack @elements)))
 
 
 (defn- tos []
-  (last @elements))
+  (last (:stack @elements)))
 
 
 (defn- newest-shape []
   (last (:elems (:drw-elem (tos)))))
-
-
-; reads and removes the string representing the latest operation on an element.
-(defn curform []
-  (if-let [s (:to-repl (tos))]
-    (do
-      (swap! elements assoc-in [(dec (elements-length)) :to-repl] nil)
-      s)
-    nil))
 
 
 (defn- collect-shapes[elem]
@@ -73,6 +65,19 @@
   (count (collect-elements (:drw-elem (tos)))))
 
 
+(defn register [f]
+  (assert fn? f)
+  (swap! elements assoc :upd-f f))
+
+
+(defn- reinit-repl-server [elem]
+  (if (or (nil? elem)(nil? (:name elem)))
+    nil
+    (if-let [f (:upd-f @elements)]
+      (f (format "(def %s %s)" (:name elem) (pr-str elem)))
+      nil)))
+
+
 (defn- push-drawing [drw elem]
   (assert
     (and (= (:type drw) :compound)(= (:subtype drw) :drawing))
@@ -80,13 +85,11 @@
   (let [shapes-list (filter
                       #(> (:visible %) 0)
                       (flatten (collect-shapes drw)))
-        e-str (if (or (nil? elem)(nil? (:name elem)))
-                nil
-                (format "(def %s %s)" (:name elem) (pr-str elem)))
-        new-drw {:drw-elem drw :shapes-list shapes-list :to-repl e-str}]
-    (swap! elements  conj new-drw)
+        new-drw {:drw-elem drw :shapes-list shapes-list}
+        new-stack (conj (:stack @elements) new-drw)]
+    (swap! elements assoc :stack new-stack)
+    (reinit-repl-server elem)
     (if (nil? elem) drw elem)))
-
 
 
 ;; The drawings stack is empty iff no push has been performed yet.
@@ -104,8 +107,8 @@
 (defn pop-elem []
   (if (= 1 elements-length)
     nil
-    (do
-      (swap! elements (comp vec butlast))
+    (let [new-stack (vec (butlast (:stack @elements)))]
+      (swap! elements assoc :stack new-stack)
       (tos))))
 
 

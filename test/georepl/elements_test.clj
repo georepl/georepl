@@ -16,7 +16,6 @@
   (testing "push-drawing"
     (is (= (#'elements/push-drawing drw nil) (:drw-elem (#'elements/tos))))
     (is (= (#'elements/push-elem e1) (#'elements/newest-shape)))
-    (is (= "(def P1 {:type :point, :visible 1, :p [567 524], :p-ref [567 524], :name \"P1\"})" (elements/curform)))
     ))
 
 
@@ -116,19 +115,15 @@
     (is (= 5 (#'elements/elements-length)))))
 
 
-(deftest curform-test
-  (testing "curform on empty stack"
+(deftest repl-form-test
+  (testing "empty drawing"
     (#'elements/clear)
-    (is (nil? (elements/curform))))
-  (testing "curform on empty drawing"
     (#'elements/push-drawing drw nil)
-    (is (nil? (elements/curform))))
-  (testing "curform after pushing a shape"
-    (#'elements/push-elem e1)
-    (is (= (format "(def P1 %s)" (pr-str e1)) (elements/curform))))
-  (testing "curform after pushing a shape and reading from repl"
-    (#'elements/push-elem e2)
-;;    (is (= (pr-str e2) (elements/curform)))
-;;    (is (= (pr-str e2) (#'repl/on-change {})))
-;;    (is (nil? (elements/curform)))
-    ))
+    (is (nil? (#'elements/reinit-repl-server e1))))
+  (testing "drawing with unnamed element"
+    (#'elements/register #'repl/update-elements)
+    (is (nil? (#'elements/reinit-repl-server (dissoc e1 :name)))))
+  (testing "repl-form after pushing a shape"
+    (#'elements/register #'repl/update-elements)
+    (is (nil? (#'elements/reinit-repl-server e2))))
+    )
