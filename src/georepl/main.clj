@@ -56,7 +56,7 @@
   (let [sNum (re-find #"[0-9]*" s)]
     (if (empty? sNum)
       nil
-     (Integer/parseInt sNum))))
+      (Integer/parseInt sNum))))
 
 
 ;; create a filename which doesn't exist yet. The file name pattern is <root from config><first new number>.grl
@@ -114,14 +114,14 @@
 
 ;; start a new quil sketch and reinitialize the elements stack with a new (empty) drawing
 (defn- start-new-drawing [size files]
-  (frame/init-frame-paint)
+  (frame/init-frame-gui)
   (elements/clear)
   (let [[server upd-f](repl/start)]
     (elements/register upd-f))
   (elements/push-elem (create-new-drawing size files)))
 
 
-;; Start paint frame with the selected drawing. This code is injected into draw-framework
+;; Start gui frame with the selected drawing. This code is injected into draw-framework
 ;; and is started when the galery frame is done (synchronization).
 (defn- start-existing-drawing [filename]
   (let [size [800 800]
@@ -130,7 +130,7 @@
       (start-new-drawing size files)
       (let [drw (file2drawing filename)]
         (elements/push-elem drw)
-        (frame/init-frame-paint)
+        (frame/init-frame-gui)
         (repl/start)))))
 
 

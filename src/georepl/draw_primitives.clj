@@ -10,7 +10,8 @@
               :green [0 250 0]
               :blue [0 0 250]
               :black [0 0 0]
-              :white [255 255 255]})
+              :white [255 255 255]
+              :someothercolour [50 0 0]})
 
 (def delta-y 10)
 
@@ -43,8 +44,8 @@
   (quil/text-size height))
 
 
-(defn text-width [coll]
-  (quil/text-width coll))
+(defn text-width [s]
+  (quil/text-width s))
 
 
 (defn draw-str [s x1 y1 x2 y2]
@@ -167,16 +168,16 @@
 
 
 
-(defn draw-text-vec[ask-vec]
-  (let [e (first ask-vec)
+(defn draw-text-vec[sel-coll]
+  (let [e (first sel-coll)
         pnt-tl (:p1 e)
         pnt-br (:p2 e)]
   (quil/text-size (- (second pnt-br)(second pnt-tl)))
-  (doseq [e ask-vec]
+  (doseq [e sel-coll]
     (do
       (apply quil/fill
-             (if (pos? (:val e))
-               [204 102 0]
-               [50 0 0]))
+             (if (pos? (:highlight e))
+               (:orange colours)
+               (:someothercolour colours)))
       (draw-text (:s e) (:p1 e) (:p2 e))
   (quil/no-fill)))))

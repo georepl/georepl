@@ -4,14 +4,14 @@
             [georepl.draw-primitives :as dp]
             [quil.core :as quil]
             [quil.middleware :as m]
-            [georepl.paint :as paint]
+            [georepl.gui :as gui]
             [georepl.gallery :as gallery]))
 
 
 ;;
-;; paint framework functions
+;; gui framework functions
 ;;
-(defn- setup-paint []
+(defn- setup-gui []
   (quil/background 255)
   (quil/text-size 10)
   (quil/no-fill)
@@ -20,41 +20,41 @@
 ;(quil/frame-rate 5)
 
   ; initial state
-  (paint/init))
+  (gui/init))
 
 
-(defn- draw-paint [state]
+(defn- draw-gui [state]
   (quil/background 255)
-  (paint/draw state))
+  (gui/draw state))
 
-(defn- key-pressed-paint [state key]
+(defn- key-pressed-gui [state key]
 ;(prn "KeyCode:" (:key-code key))
   (case (:key-code key)
-    10  (paint/key-pressed state :ok)
-    27  (paint/key-pressed state :esc)
-    82  (paint/key-pressed state :redo)
-    83  (paint/key-pressed state :save)
-    90  (paint/key-pressed state :undo)
-        (paint/key-pressed state (:key key))))
+    10  (gui/key-pressed state :ok)
+    27  (gui/key-pressed state :esc)
+    82  (gui/key-pressed state :redo)
+    83  (gui/key-pressed state :save)
+    90  (gui/key-pressed state :undo)
+        (gui/key-pressed state (:key key))))
 
 
 ;;
-;; main paint
+;; main gui
 ;;
-(defn init-frame-paint []
+(defn init-frame-gui []
   (quil/defsketch GeoRepl
     :size [800 800]
     :features [:resizable]
     :title "GeoRepl"
-    :setup setup-paint
-    :draw draw-paint
-    :update (paint/wrap paint/update-frame)
-    :mouse-pressed (paint/wrap paint/mouse-pressed)
-    :mouse-released (paint/wrap paint/mouse-released)
-    :mouse-dragged (paint/wrap paint/mouse-dragged)
-    :mouse-moved (paint/wrap paint/mouse-moved)
-    :key-pressed key-pressed-paint
-    :on-close (paint/wrap paint/on-close)
+    :setup setup-gui
+    :draw draw-gui
+    :update (gui/wrap gui/update-frame)
+    :mouse-pressed (gui/wrap gui/mouse-pressed)
+    :mouse-released (gui/wrap gui/mouse-released)
+    :mouse-dragged (gui/wrap gui/mouse-dragged)
+    :mouse-moved (gui/wrap gui/mouse-moved)
+    :key-pressed key-pressed-gui
+    :on-close (gui/wrap gui/on-close)
     :middleware [m/fun-mode])
   nil)
 

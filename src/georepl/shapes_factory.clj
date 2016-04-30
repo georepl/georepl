@@ -6,12 +6,34 @@
 
 
 
+
+;; functions which are identical for all shapes
+;;
+(defn refresh [this p]
+  (if-let [question (first (:quector this))]
+    ((:g question) this p)
+    this))
+
+(defn update-element [this elem]
+  (assoc this :elem elem))
+
+(defn current-element [this]
+  (:elem this))
+
+(defn current-question [this]
+  (if-let [question (first (:quector this))]
+    (:f question)
+    nil))
+
+(defn current-dialog [this]
+  (:quector this))
+
+
+
+;; shape-specific functions
+;;
 (defprotocol IShapesFactory
   (create[this])
-  (refresh[this elem])
-  (update-element[this elem])
-  (current-element[this])
-  (current-question[this])
   (finish[this]))
 
 
@@ -29,24 +51,9 @@
                                   (update-element this (assoc e :p p :p-ref p))))
                            :g (fn[this p]
                                 (let [e (current-element this)]
-                                  (update-element this (assoc e :p p :p-ref p))))}]))
+                                  (update-element this (assoc e :p p :p-ref p))))
+                           :highlight 1}]))
 
-
-  (refresh [this p]
-    (if-let [quector (first (:quector this))]
-      ((:g quector) this p)
-      this))
-
-  (current-element [this]
-    (:elem this))
-
-  (update-element [this elem]
-    (assoc this :elem elem))
-
-  (current-question[this]
-    (if-let [quector (first (:quector this))]
-      (:f quector)
-      nil))
 
   (finish [this]
     (elements/push-elem
@@ -74,30 +81,16 @@
                                                 :complete? true))))
                            :g (fn [this p]
                                 (let [line (assoc (current-element this) :p2 p :p-ref p)]
-                                  (update-element this line)))}
+                                  (update-element this line)))
+                           :highlight 1}
                           {:s "ok?"
                            :f (fn[this p]
                                 (assoc this :complete? true))
                            :g (fn [this p]
                                 (let [line (assoc (current-element this) :p2 p :p-ref p)]
-                                  (update-element this line)))}]))
+                                  (update-element this line)))
+                           :highlight 0}]))
 
-
-  (refresh [this p]
-    (if-let [quector (first (:quector this))]
-      ((:g quector) this p)
-      this))
-
-  (update-element [this elem]
-    (assoc this :elem elem))
-
-  (current-element [this]
-    (:elem this))
-
-  (current-question[this]
-    (if-let [quector (first (:quector this))]
-      (:f quector)
-      nil))
 
   (finish [this]
     (elements/push-elem
@@ -125,7 +118,8 @@
                         :g (fn[this p]
                              (->> (math/vec-sub p (:p-center (current-element this)))
                                   (shapes/translate (current-element this))
-                                  (update-element this)))}
+                                  (update-element this)))
+                        :highlight 1}
                        {:s "define radius"
                         :f (fn[this p]
                              (if-let [circle (current-element this)]
@@ -147,29 +141,15 @@
                                    circle (shapes/scale (current-element this) factor)]
                                (if-not (math/equals? p (:p-center (current-element this)))
                                  (update-element this circle)
-                                 this)))}
+                                 this)))
+                        :highlight 0}
                        {:s "define point on circle"
                         :f (fn[this p]
                              (assoc-in this [:elem :complete?] true))
                         :g (fn[this p]
-                             this)}])))
+                             this)
+                        :highlight 0}])))
 
-
-  (refresh [this p]
-    (if-let [quector (first (:quector this))]
-      ((:g quector) this p)
-      this))
-
-  (update-element [this elem]
-    (assoc this :elem elem))
-
-  (current-element [this]
-    (:elem this))
-
-  (current-question[this]
-    (if-let [quector (first (:quector this))]
-      (:f quector)
-      nil))
 
   (finish [this]
     (elements/push-elem
@@ -199,7 +179,8 @@
                         :g (fn[this p]
                              (->> (math/vec-sub p (:p-start (current-element this)))
                                   (shapes/translate (current-element this))
-                                  (update-element this)))}
+                                  (update-element this)))
+                        :highlight 1}
                        {:s "pick end point"
                         :f (fn[this p]
                              (if-let [arc (current-element this)]
@@ -220,7 +201,8 @@
                                                       (math/dist (:p-start arc) new-p-c)
                                                       (:p-start arc)
                                                       p))
-                                 this)))}
+                                 this)))
+                        :highlight 0}
                        {:s "define point on circle"
                         :f (fn[this p]
                              (let [circle (math/circumcircle
@@ -246,24 +228,9 @@
                                                      (second circle)
                                                      p-s
                                                      p-e))
-                                 this)))}])))
+                                 this)))
+                        :highlight 0}])))
 
-
-  (refresh [this p]
-    (if-let [quector (first (:quector this))]
-      ((:g quector) this p)
-      this))
-
-  (update-element [this elem]
-    (assoc this :elem elem))
-
-  (current-element [this]
-    (:elem this))
-
-  (current-question[this]
-    (if-let [quector (first (:quector this))]
-      (:f quector)
-      nil))
 
   (finish [this]
     (elements/push-elem
@@ -292,37 +259,22 @@
                         :g (fn[this p]
                              (assoc this :elem (shapes/translate
                                                 (current-element this)
-                                                (math/vec-sub p (:p-ref (current-element this))))))}
+                                                (math/vec-sub p (:p-ref (current-element this))))))
+                        :highlight 1}
                        {:s "ok?"
                         :f (fn[this p]
                              (assoc this :complete? true))
                         :g (fn[this p]
                              (update-element this (shapes/translate
                                                   (current-element this)
-                                                  (math/vec-sub p (:p-ref (current-element this))))))}])))
+                                                  (math/vec-sub p (:p-ref (current-element this))))))
+                        :highlight 0}])))
 
-
-  (refresh [this p]
-    (if-let [quector (first (:quector this))]
-      ((:g quector) this p)
-      this))
-
-  (update-element [this elem]
-    (assoc this :elem elem))
-
-  (current-element [this]
-    (:elem this))
-
-  (current-question[this]
-    (if-let [quector (first (:quector this))]
-      (:f quector)
-      nil))
 
   (finish [this]
     (elements/push-elem
       (assoc (current-element this) :name (elements/unique-name "Con")))
     :contour))
-
 
 
 
