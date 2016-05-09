@@ -45,7 +45,7 @@
     (assoc this :elem elem
                 :complete? false
                 :just-answered :none
-                :quector [{:s "next points"
+                :quector [{:s "next point"
                            :f (fn[this p]
                                 (let [pnt (current-element this)]
                                   (assoc this :elem (assoc pnt :p p :p-ref p)

@@ -17,7 +17,7 @@
   (quil/no-fill)
 
 ;; reduced frame rate for testing purposes
-(quil/frame-rate 5)
+;(quil/frame-rate 5)
 
   ; initial state
   (gui/init))

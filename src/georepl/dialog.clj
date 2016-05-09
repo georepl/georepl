@@ -52,6 +52,10 @@
       (reverse coll))))
 
 
+(defn visible [[sel e b] visible?]
+  [sel e visible?])
+
+
 (defn- get-elem[coll]
   (first
     (drop-while #(not= (:highlight %) 1) coll)))
@@ -65,7 +69,7 @@
           :down   (let [coll (down sel-coll)]
                     [coll (get-elem coll) true])
           :ok     [sel-coll (get-elem sel-coll) false]
-                  [sel-coll nil false]))
+                  [sel-coll nil true]))
   ([x y sel-coll]
     (if (nil? sel-coll)
       nil

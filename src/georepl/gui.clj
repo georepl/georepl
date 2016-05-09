@@ -70,7 +70,7 @@
                 (shapesFactory/createShapeFactory
                   (shapes/constructPoint (:p-cur this)))
                 (:redo-stack this)
-                (:selection this))))
+                (dialog/visible (:selection this) false))))
 
 (defn- modify-mode [this]
   (prn "Modify")
@@ -117,14 +117,13 @@
     (assoc this :complete? false))
 
 
-  (mouse-pressed[this event]
+  (mouse-pressed [this event]
     (if (= :right (:button event))
       (context this [(:x event)(:y event)])
       (if (last (:selection this))
-        (let [[selection e visible?] (dialog/select (:x event)(:y event) (first (:selection this)))]
-          (let [state (assoc this :selection [selection e visible?] :p-cur [(:x event)(:y event)])]
-            ((:f e) state)
-            state))
+        (let [[selection e visible?] (dialog/select (:x event)(:y event) (first (:selection this)))
+              state (assoc this :selection [selection e visible?] :p-cur [(:x event)(:y event)])]
+            ((:f e) state))
         (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) 1] [])
                     :button-down-time (System/currentTimeMillis)
                     :show-trace? true
@@ -215,11 +214,16 @@
 ;;
 (defn- finish-creation [state]
   (let [shape (shapesFactory/finish (:factory state))]
+;(prn "finish-creation:" shape)
     (match [shape (:back-to-drawing state)]
            [:point false] (let [elem (shapes/constructPoint (:p-cur state))
                                 fact (shapesFactory/createShapeFactory elem)]
                            ((wrap reset-state)
-                             (->Drawing [] (:selection-save state))))
+                             (->Creating (:p-cur state)
+                                         (shapesFactory/createShapeFactory
+                                           (shapes/constructPoint (:p-cur state)))
+                                         (:redo-stack state)
+                                         (dialog/visible (:selection state) false))))
            [:line false] (let [elem (shapes/constructLine (:p-cur state)(:p-cur state))
                                fact (shapesFactory/createShapeFactory elem)]
                            ((wrap reset-state)
