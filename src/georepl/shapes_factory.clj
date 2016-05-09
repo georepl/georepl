@@ -45,13 +45,14 @@
     (assoc this :elem elem
                 :complete? false
                 :just-answered :none
-                :quector [{:s "single points"
+                :quector [{:s "next points"
                            :f (fn[this p]
-                                (let [e (current-element this)]
-                                  (update-element this (assoc e :p p :p-ref p))))
+                                (let [pnt (current-element this)]
+                                  (assoc this :elem (assoc pnt :p p :p-ref p)
+                                              :complete? true)))
                            :g (fn[this p]
-                                (let [e (current-element this)]
-                                  (update-element this (assoc e :p p :p-ref p))))
+                                (let [pnt (assoc (current-element this) :p p :p-ref p)]
+                                  (update-element this pnt)))
                            :highlight 1}]))
 
 

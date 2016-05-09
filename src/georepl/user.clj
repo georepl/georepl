@@ -1,4 +1,4 @@
-(ns georepl.repl
+(ns georepl.user
   (:require [georepl.shapes-factory :as shapesFactory]
             [georepl.elements :as elements]
             [clojure.tools.nrepl.server :as repl]

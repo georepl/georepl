@@ -133,7 +133,7 @@
 (defn project-point-onto-circle [p center-p radius]
   (let [v (vec-sub p center-p)]
     (vec-add (vec-scal-mult (/ radius
-                               (min EPS (length v)))
+                               (max EPS (length v)))
                             v)
              center-p)))
 

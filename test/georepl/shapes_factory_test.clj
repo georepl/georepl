@@ -30,7 +30,8 @@
               (:p-ref (current-element
                     (update-element fact (shapes/constructPoint [60 250]))))))))
     (testing "current-question"
-      (is (fn? (current-question fact))))
+      (is (fn? (current-question fact)))
+      (is (true? (:complete? ((current-question fact) fact [25 42])))))
     (testing "finish"
       (is (= :point (finish fact)))
       (is (= "Pnt1" (:name (#'elements/newest-shape)))))))

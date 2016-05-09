@@ -1,7 +1,7 @@
 (ns georepl.elements-test
   (:require [clojure.test :refer :all]
             [georepl.elements :as elements]
-            [georepl.repl :as repl]))
+            [georepl.user :as user]))
 
 
 (def drw {:type :compound :subtype :drawing :elems [] :filename "/testfiles/temp.grl"})
@@ -121,9 +121,9 @@
     (#'elements/push-drawing drw nil)
     (is (nil? (#'elements/reinit-repl-server e1))))
   (testing "drawing with unnamed element"
-    (#'elements/register #'repl/update-elements)
+    (#'elements/register #'user/update-elements)
     (is (nil? (#'elements/reinit-repl-server (dissoc e1 :name)))))
   (testing "repl-form after pushing a shape"
-    (#'elements/register #'repl/update-elements)
+    (#'elements/register #'user/update-elements)
     (is (nil? (#'elements/reinit-repl-server e2))))
     )

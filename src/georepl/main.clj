@@ -5,7 +5,7 @@
             [georepl.shapes :as shapes]
             [georepl.mathlib :as math]
             [georepl.elements :as elements]
-            [georepl.repl :as repl]
+            [georepl.user :as user]
             [georepl.configuration :as config]))
 
 
@@ -116,7 +116,7 @@
 (defn- start-new-drawing [size files]
   (frame/init-frame-gui)
   (elements/clear)
-  (let [[server upd-f](repl/start)]
+  (let [[server upd-f](user/start)]
     (elements/register upd-f))
   (elements/push-elem (create-new-drawing size files)))
 
@@ -131,7 +131,7 @@
       (let [drw (file2drawing filename)]
         (elements/push-elem drw)
         (frame/init-frame-gui)
-        (repl/start)))))
+        (user/start)))))
 
 
 (defn- main[]
