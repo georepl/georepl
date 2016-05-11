@@ -45,10 +45,11 @@
     (assoc this :elem elem
                 :complete? false
                 :just-answered :none
-                :quector [{:s "next point"
+                :quector [{:s "return"
                            :f (fn[this p]
                                 (let [pnt (current-element this)]
                                   (assoc this :elem (assoc pnt :p p :p-ref p)
+                                              :back-to-drawing true
                                               :complete? true)))
                            :g (fn[this p]
                                 (let [pnt (assoc (current-element this) :p p :p-ref p)]
@@ -84,9 +85,10 @@
                                 (let [line (assoc (current-element this) :p2 p :p-ref p)]
                                   (update-element this line)))
                            :highlight 1}
-                          {:s "ok?"
+                          {:s "return"
                            :f (fn[this p]
-                                (assoc this :complete? true))
+                                (assoc this :complete? true
+                                            :back-to-drawing true))
                            :g (fn [this p]
                                 (let [line (assoc (current-element this) :p2 p :p-ref p)]
                                   (update-element this line)))

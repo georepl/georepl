@@ -12,13 +12,13 @@
           x-l x
           x-r (+ x-l width)
           height (:dialog-text-size config/Configuration)]
-      (map #(conj {:p1 (vec (list x-l %))}
-                  [:p2 (vec (list x-r (+ % height)))]
-                  [:s (:s %2)]
-                  [:f (:f %2)]
-                  [:type (:type %2)]
-                  [:highlight (:highlight %2)])
-           (iterate (partial + height) y) sel-coll))))
+      (vec (map #(conj {:p1 (vec (list x-l %))}
+                      [:p2 (vec (list x-r (+ % height)))]
+                      [:s (:s %2)]
+                      [:f (:f %2)]
+                      [:type (:type %2)]
+                      [:highlight (:highlight %2)])
+           (iterate (partial + height) y) sel-coll)))))
 
 
 ;; context dialog
@@ -52,31 +52,21 @@
       (reverse coll))))
 
 
-(defn visible [[sel e b] visible?]
-  [sel e visible?])
-
-
-(defn- get-elem[coll]
+(defn current-selection [sel-coll]
   (first
-    (drop-while #(not= (:highlight %) 1) coll)))
+    (drop-while #(= (:highlight %) 0) sel-coll)))
 
 
 (defn select
   ([key sel-coll]
     (case key
-          :up     (let [coll (up sel-coll)]
-                    [coll (get-elem coll) true])
-          :down   (let [coll (down sel-coll)]
-                    [coll (get-elem coll) true])
-          :ok     [sel-coll (get-elem sel-coll) false]
-                  [sel-coll nil true]))
+          :up     (up sel-coll)
+          :down   (down sel-coll)
+          :ok     sel-coll
+                  sel-coll))
   ([x y sel-coll]
     (if (nil? sel-coll)
       nil
       (if-let [e (select-point [x y] sel-coll)]
-        [(map #(assoc % :highlight (if (= e %) 1 0)) sel-coll) e true]
+        (map #(assoc % :highlight (if (= e %) 1 0)) sel-coll)
         nil))))
-
-(defn current-selection [sel-coll]
-  (first
-    (drop-while #(= (:highlight %) 0) sel-coll)))

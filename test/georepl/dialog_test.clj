@@ -37,13 +37,11 @@
           {:p1 [341 393], :p2 [413.8369140625 413], :s "Cancel", :f cancel, :type nil, :highlight 0}
          ])
 
-(def ret ['({:s "Polyline", :f foo0, :type nil, :highlight 0}
-            {:s "Ortho-Polyline", :f foo1, :type nil, :highlight 1}
-            {:s "Point", :f foo2, :type nil, :highlight 0}
-            {:s "Modify Shapes", :f foo3, :type nil, :highlight 0}
-            {:s "Cancel", :f cancel, :type nil, :highlight 0})
-          {:s "Ortho-Polyline", :f foo1, :type nil, :highlight 1}
-          true])
+(def ret '({:s "Polyline", :f foo0, :type nil, :highlight 0}
+           {:s "Ortho-Polyline", :f foo1, :type nil, :highlight 1}
+           {:s "Point", :f foo2, :type nil, :highlight 0}
+           {:s "Modify Shapes", :f foo3, :type nil, :highlight 0}
+           {:s "Cancel", :f cancel, :type nil, :highlight 0}))
 
 ;(deftest dialog-test
 ;  (is (= nil (#'dialog/dialog [100 100] sl))))
@@ -59,10 +57,8 @@
 
 (deftest select-test
   (testing "select key"
-    (is (= 0 (:highlight (nth (first (#'dialog/select :up sl)) 0))))
-    (is (= 1 (:highlight (nth (first (#'dialog/select :up sl)) 4))))
-    (let [[selcoll elem visible?] (#'dialog/select :up sl2)]
-      (is (= (map #(dissoc % :f) (first ret)) (map #(dissoc % :p1 :p2 :f) selcoll)))
-      (is (= {:s "Ortho-Polyline", :f foo1, :type nil, :highlight 1} (dissoc elem :p1 :p2)))
-      (is (= true visible?)))
-    ))
+    (is (= 0 (:highlight (nth (vec (#'dialog/select :up sl)) 0))))
+    (is (= 1 (:highlight (nth (vec (#'dialog/select :up sl)) 4))))
+    (let [sel (#'dialog/select :up sl2)]
+      (is (= (map #(dissoc % :f) ret) (map #(dissoc % :p1 :p2 :f) sel)))
+    )))

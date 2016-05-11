@@ -55,29 +55,29 @@
         (throw (ex-info "non-IGui function called or missing return value (state)" {:f f :state args :new-state ret})))
       ret)))
 
-(defn- draw-polyline [this]
-  (prn "Polyline")
-  this)
+(defn- draw-polyline [state]
+(prn "Polyline")
+  (assoc state :show-context? false))
 
-(defn- draw-ortho-polyline [this]
-  (prn "Ortho-Polyline")
-  this)
+(defn- draw-ortho-polyline [state]
+(prn "Ortho-Polyline")
+  (assoc state :show-context? false))
 
-(defn- draw-point [this]
+(defn- draw-point [state]
 (prn "draw-point: Draw Point")
   ((wrap reset-state)
-    (->Creating (:p-cur this)
+    (->Creating (:p-cur state)
                 (shapesFactory/createShapeFactory
-                  (shapes/constructPoint (:p-cur this)))
-                (:redo-stack this)
-                (dialog/visible (:selection this) false))))
+                  (shapes/constructPoint (:p-cur state)))
+                (:redo-stack state)
+                (:selection state))))
 
-(defn- modify-mode [this]
-  (prn "Modify")
-  this)
+(defn- modify-mode [state]
+(prn "Modify")
+  (assoc state :show-context? false))
 
 (defn- cancel [state]
-  (assoc state :selection nil))
+  (assoc state :show-context? false))
 
 
 (defn- drawing-dialog []
@@ -89,7 +89,7 @@
 
 
 (defn- create-elem [this]
-  (let [e (dialog/current-selection (second (:selection this)))]
+  (let [e (dialog/current-selection (:selection this))]
     (case (:create e)
       :point    (shapes/constructPoint (last (:trace this)))
                 (freehand/analyze-shape (map butlast (:trace this))))))
@@ -98,18 +98,21 @@
 ;;
 ;; the regular-drawing-mode implementation
 ;;
-(defrecord Drawing [redo-stack selection] IGui
+(defrecord Drawing [redo-stack selection context-point] IGui
   (reset-state [this]
     (-> this
      (assoc :redo-stack redo-stack
             :selection selection
-            :current-dialog (if-let [sl (second selection)]
-                              (first selection)
-                              (drawing-dialog))
+            :current-dialog (if (nil? selection)
+                              (drawing-dialog)
+                              selection)
             :button-down-time nil
             :trace []
             :show-trace? false
+            :context-point context-point
+            :show-context? false
             :complete? false)))
+
 
   (draw-temporary [this]
     (when (:show-trace? this)
@@ -120,10 +123,10 @@
   (mouse-pressed [this event]
     (if (= :right (:button event))
       (context this [(:x event)(:y event)])
-      (if (last (:selection this))
-        (let [[selection e visible?] (dialog/select (:x event)(:y event) (first (:selection this)))
-              state (assoc this :selection [selection e visible?] :p-cur [(:x event)(:y event)])]
-            ((:f e) state))
+      (if (:show-context? this)
+        (if-let [sel (dialog/select (:x event)(:y event) (:selection this))]
+          ((:f (dialog/current-selection sel)) (assoc this :selection sel :p-cur [(:x event)(:y event)]))
+          this)
         (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) 1] [])
                     :button-down-time (System/currentTimeMillis)
                     :show-trace? true
@@ -138,15 +141,19 @@
                   :show-trace? false
                   :complete? true)))
 
+
   (mouse-dragged[this event]
     (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) 1] (:trace this))
                 :show-trace? true))
 
+
   (mouse-moved [this event]
     this)
 
+
   (picked [this]
     this)
+
 
   (snapped [this]
     (if-let [[elem p d] (next-point-on-element
@@ -160,13 +167,15 @@
                   (:selection this)))
       this))
 
+
   ;; remove the previously drawn element and return to initial drawing mode
   (dashed [this]
-    (if-let [e (elements/pop-elem)]
+   (if-let [e (elements/pop-elem)]
       ((wrap reset-state)
-         (->Drawing (cons e (:redo-stack this)) (:selection this)))
+         (->Drawing (cons e (:redo-stack this)) (:selection this) nil))
       ((wrap reset-state)
-         (->Drawing [] (:selection this)))))
+         (->Drawing [] (:selection this) nil))))
+
 
   (dragged [this]
     (let [elem (create-elem this)
@@ -179,15 +188,18 @@
                       (:redo-stack this)
                       (:selection this))))))
 
+
   (moved [this]
     (if (> (count (:trace this)) 2)
       (assoc this :show-trace? true)
       this))
 
+
   (context [this p]
-    (let [sel (dialog/dialog p (first (:selection this)))
-          state (assoc this :selection [sel nil true])]
+    (let [sel (dialog/dialog p (:selection this))
+          state (assoc this :selection sel :show-context? true)]
       state))
+
 
   (update-frame [this]
    "the ordinary drawing mode update-frame"
@@ -214,7 +226,6 @@
 ;;
 (defn- finish-creation [state]
   (let [shape (shapesFactory/finish (:factory state))]
-;(prn "finish-creation:" shape)
     (match [shape (:back-to-drawing state)]
            [:point false] (let [elem (shapes/constructPoint (:p-cur state))
                                 fact (shapesFactory/createShapeFactory elem)]
@@ -223,30 +234,30 @@
                                          (shapesFactory/createShapeFactory
                                            (shapes/constructPoint (:p-cur state)))
                                          (:redo-stack state)
-                                         (dialog/visible (:selection state) false))))
+                                         (:selection-save state))))
            [:line false] (let [elem (shapes/constructLine (:p-cur state)(:p-cur state))
                                fact (shapesFactory/createShapeFactory elem)]
                            ((wrap reset-state)
                              (->Creating (:p-cur state) fact [] (:selection-save state))))
 
            :else         ((wrap reset-state)
-                           (->Drawing [] (:selection-save state))))))
-
+                           (->Drawing [] (:selection-save state)(:p-cur state))))))
 
 
 (defrecord Creating [p-cur factory redo-stack selection-save] IGui
   (reset-state [this]
-   (-> this
-      (assoc :redo-stack redo-stack
-             :current-dialog (shapesFactory/current-dialog (:factory this))
-             :selection-save selection-save
-             :selection nil
-             :p-cur p-cur
-             :f-cur (shapesFactory/current-question (:factory this))
-             :factory factory
-             :button-down-time nil
-             :back-to-drawing false
-             :user-has? :done-nothing)))
+    (-> this
+       (assoc :redo-stack redo-stack
+              :current-dialog (shapesFactory/current-dialog (:factory this))
+              :selection-save selection-save
+              :selection nil
+              :show-context? false
+              :p-cur p-cur
+              :f-cur (shapesFactory/current-question (:factory this))
+              :factory factory
+              :button-down-time nil
+              :back-to-drawing false
+              :user-has? :done-nothing)))
 
   (draw-temporary [this]
     (when-let [e (shapesFactory/current-element factory)]
@@ -258,8 +269,8 @@
     (let [p [(:x event)(:y event)]]
       (if (= :right (:button event))
         (context this p)
-        (if-let [e (second (dialog/select (:x event)(:y event) (first (:selection this))))]
-          ((:f e) this p)
+        (if-let [sel (dialog/select (:x event)(:y event) (:selection this))]
+          ((:f (dialog/current-selection sel)) this p)
           (assoc this :p-cur p
                       :user-has? :dragged
                       :button-down-time (System/currentTimeMillis)
@@ -313,7 +324,7 @@
 
   (dashed [this]
     ((wrap reset-state)
-      (->Drawing (:redo-stack this) (:selection-save this))))
+      (->Drawing (:redo-stack this) (:selection-save this) nil)))
 
   (dragged [this]
     (if-not (nil? (:p-cur this))
@@ -330,29 +341,37 @@
       this))
 
   (context [this p]
-;    (assoc this :selection [(dialog/dialog p (:current-dialog this)) nil]))
-    (let [sel (dialog/dialog p (:current-dialog this))
-          state (assoc this :selection [sel nil true])]
-;(prn "Creating Context:" state)
+   (let [sel (dialog/dialog p (:current-dialog this))
+         state (assoc this :selection sel :show-context? true)]
       state))
 
+
   (update-frame [this]
-    (if-let [t (:button-down-time this)]
-      (if (snap-time-exceeded? t)
-        (picked (snapped this))
-        this)
-      (let [fact (:factory this)
-            e (shapesFactory/current-element fact)
-            p (:p-cur this)
-            state (case (:user-has? this)
-                         :picked   (picked this)
-                         :dashed   (dashed this)
-                         :dragged  (dragged this)
-                         :moved    (moved this)
-                                   this)]
-         (if-not (:complete? (:factory state))
-           state
-           (finish-creation state))))))
+    (if (and (:back-to-drawing this)(:show-context? this))
+      ((wrap reset-state)
+        (->Drawing []
+                   (:selection-save this)
+                   (if (:show-context? this)
+                     (:p-cur this)
+                     nil)))
+        (if-let [p (:context-point this)]
+          (context this p)
+          (if-let [t (:button-down-time this)]
+            (if (snap-time-exceeded? t)
+              (picked (snapped this))
+              this)
+            (let [fact (:factory this)
+                  e (shapesFactory/current-element fact)
+                  p (:p-cur this)
+                  state (case (:user-has? this)
+                               :picked   (picked this)
+                               :dashed   (dashed this)
+                               :dragged  (dragged this)
+                               :moved    (moved this)
+                                         this)]
+               (if-not (:complete? (:factory state))
+                 state
+                 (finish-creation state))))))))
 
 
 
@@ -361,13 +380,13 @@
 (defn key-pressed [this key]
 ;(prn "KEY-pressed" this)
   (case key
-    :up     (if-let [sel (dialog/select :up (first (:selection this)))]
+    :up     (if-let [sel (dialog/select :up (:selection this))]
               (assoc this :selection sel)
               this)
-    :down   (if-let [sel (dialog/select :down (first (:selection this)))]
+    :down   (if-let [sel (dialog/select :down (:selection this))]
               (assoc this :selection sel)
               this)
-    :ok     (if-let [sel (dialog/select :ok (first (:selection this)))]
+    :ok     (if-let [sel (dialog/select :ok (:selection this))]
               (assoc this :selection sel)
               this)
     :save   (do
@@ -394,16 +413,14 @@
 
 (defn init[]
   (dp/text-height (:shapes-label-size config/Configuration))
-  ((wrap reset-state) (->Drawing [] [(drawing-dialog) nil false])))
+  ((wrap reset-state) (->Drawing [] (drawing-dialog) nil)))
 
 
 (defn draw [state]
   (doseq [e (elements/list-elems)]
     (dp/draw-element e))
-  (when-let [sl (first (:selection state))]
-    (when (last (:selection state))
-;(when (nil? (:p1 sl)) (prn "SL:" sl))
-      (dp/text-height (:dialog-text-size config/Configuration))
-      (dp/draw-text-vec sl)
-      (dp/text-height (:shapes-label-size config/Configuration))))
+  (when (:show-context? state)
+    (dp/text-height (:dialog-text-size config/Configuration))
+    (dp/draw-text-vec (:selection state))
+    (dp/text-height (:shapes-label-size config/Configuration)))
   ((wrap draw-temporary) state))
