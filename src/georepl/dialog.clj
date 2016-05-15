@@ -16,7 +16,7 @@
                       [:p2 (vec (list x-r (+ % height)))]
                       [:s (:s %2)]
                       [:f (:f %2)]
-                      [:type (:type %2)]
+                      [:create (:create %2)]
                       [:highlight (:highlight %2)])
            (iterate (partial + height) y) sel-coll)))))
 

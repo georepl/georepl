@@ -33,7 +33,7 @@
       (is (fn? (current-question fact)))
       (is (true? (:complete? ((current-question fact) fact [25 42])))))
     (testing "finish"
-      (is (= :point (finish fact)))
+      (is (= :point (first (finish fact))))
       (is (= "Pnt1" (:name (#'elements/newest-shape)))))))
 
 
@@ -60,7 +60,7 @@
     (testing "current-question"
       (is (fn? (current-question fact))))
     (testing "finish"
-      (is (= :line (finish fact)))
+      (is (= :line (first (finish fact))))
       (is (= "Ln1" (:name (#'elements/newest-shape)))))))
 
 
@@ -92,7 +92,7 @@
     (testing "current-question"
       (is (fn? (current-question fact))))
     (testing "finish"
-      (is (= :circle (finish fact)))
+      (is (= :circle (first (finish fact))))
       (is (= "Cir1" (:name (#'elements/newest-shape)))))))
 
 
@@ -130,7 +130,7 @@
     (testing "current-question"
       (is (fn? (current-question fact))))
     (testing "finish"
-      (is (= :arc (finish fact)))
+      (is (= :arc (first (finish fact))))
       (is (= "Arc1" (:name (#'elements/newest-shape)))))))
 
 
@@ -158,5 +158,5 @@
     (testing "current-question"
       (is (fn? (current-question fact))))
     (testing "finish"
-      (is (= :contour (finish fact)))
+      (is (= :contour (first (finish fact))))
       (is (= "Con1" (:name (#'elements/newest-shape)))))))

@@ -100,6 +100,17 @@
     (angle v [1 0])))
 
 
+;; v := p-p2
+;; w := D90° (p2 - p1)
+;; p-res = <v,w>/(|w||w|) * w
+(defn project-line [p p1 p2]
+  (if (equals? p1 p2)
+    p1
+    (let [v (vec-sub p p2)
+          w (vec-ortho (vec-sub p1 p2))
+          a (/ (dot-product v w)(dot-product w w))]
+      (vec-add p2 (vec-scal-mult a w)))))
+
 
 (defn vec-rotate-center [p angle]
   (let [c (cos angle)

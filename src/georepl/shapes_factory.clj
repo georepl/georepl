@@ -60,14 +60,17 @@
   (finish [this]
     (elements/push-elem
       (assoc elem :name (elements/unique-name "Pnt")))
-    :point))
+    [:point (current-element this)]))
 
 
+(defn- next-point [p line]
+  (if (:orthogonal? line)
+    (let [p1 [(first (:p1 line)) (second p)]
+          p2 [(first p) (second (:p1 line))]]
+      (if (< (math/dist p p1)(math/dist p p2)) p1 p2))
+    p))
 
 
-;;
-;; line factory
-;;
 (defrecord LineFactory[elem] IShapesFactory
   (create [this]
     (assoc this :elem elem
@@ -78,27 +81,29 @@
                                 (let [line (current-element this)]
                                   (if (math/nearly-zero? (math/dist (:p1 line) p))
                                     this
-                                    (assoc this :elem (assoc line :p2 p
+                                    (assoc this :elem (assoc line :p2 (next-point p line)
                                                                   :p-ref (:p2 line))
-                                                :complete? true))))
+                                                  :complete? true))))
                            :g (fn [this p]
-                                (let [line (assoc (current-element this) :p2 p :p-ref p)]
-                                  (update-element this line)))
+                                (let [line (current-element this)
+                                      p3 (next-point p line)]
+                                  (update-element this (assoc line :p2 p3 :p-ref p3))))
                            :highlight 1}
                           {:s "return"
                            :f (fn[this p]
                                 (assoc this :complete? true
                                             :back-to-drawing true))
                            :g (fn [this p]
-                                (let [line (assoc (current-element this) :p2 p :p-ref p)]
-                                  (update-element this line)))
+                                (let [line (current-element this)
+                                      p3 (next-point p line)]
+                                  (update-element this (assoc line :p2 p3 :p-ref p3))))
                            :highlight 0}]))
 
 
   (finish [this]
     (elements/push-elem
       (assoc (current-element this) :name (elements/unique-name "Ln")))
-    :line))
+    [:line (current-element this)]))
 
 
 ;;
@@ -157,8 +162,7 @@
   (finish [this]
     (elements/push-elem
       (assoc (current-element this) :name (elements/unique-name "Cir")))
-    :circle))
-
+    [:circle (current-element this)]))
 
 
 
@@ -238,7 +242,7 @@
   (finish [this]
     (elements/push-elem
       (assoc (current-element this) :name (elements/unique-name "Arc")))
-    :arc))
+    [:arc (current-element this)]))
 
 
 
@@ -277,7 +281,7 @@
   (finish [this]
     (elements/push-elem
       (assoc (current-element this) :name (elements/unique-name "Con")))
-    :contour))
+    [:contour (current-element this)]))
 
 
 

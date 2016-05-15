@@ -56,15 +56,16 @@
       ret)))
 
 (defn- draw-polyline [state]
-(prn "Polyline")
-  (assoc state :show-context? false))
+  (assoc state
+    :ortho-polyline? false
+    :show-context? false))
 
 (defn- draw-ortho-polyline [state]
-(prn "Ortho-Polyline")
-  (assoc state :show-context? false))
+  (assoc state
+    :ortho-polyline? true
+    :show-context? false))
 
 (defn- draw-point [state]
-(prn "draw-point: Draw Point")
   ((wrap reset-state)
     (->Creating (:p-cur state)
                 (shapesFactory/createShapeFactory
@@ -90,9 +91,11 @@
 
 (defn- create-elem [this]
   (let [e (dialog/current-selection (:selection this))]
+;(prn "CreateElem:" e)
     (case (:create e)
-      :point    (shapes/constructPoint (last (:trace this)))
-                (freehand/analyze-shape (map butlast (:trace this))))))
+      :ortho-polyline  (assoc (shapes/constructLine (take 2 (first (:trace this))) (take 2 (last (:trace this)))) :orthogonal? true)
+      :point           (shapes/constructPoint (last (:trace this)))
+                       (freehand/analyze-shape (map butlast (:trace this))))))
 
 
 ;;
@@ -226,7 +229,7 @@
 ;;
 (defn- finish-creation [state]
   (let [shape (shapesFactory/finish (:factory state))]
-    (match [shape (:back-to-drawing state)]
+    (match [(first shape) (:back-to-drawing state)]
            [:point false] (let [elem (shapes/constructPoint (:p-cur state))
                                 fact (shapesFactory/createShapeFactory elem)]
                            ((wrap reset-state)
@@ -235,10 +238,15 @@
                                            (shapes/constructPoint (:p-cur state)))
                                          (:redo-stack state)
                                          (:selection-save state))))
-           [:line false] (let [elem (shapes/constructLine (:p-cur state)(:p-cur state))
-                               fact (shapesFactory/createShapeFactory elem)]
-                           ((wrap reset-state)
-                             (->Creating (:p-cur state) fact [] (:selection-save state))))
+           [:line false] (let [line (assoc (shapes/constructLine (:p-cur state)(:p-cur state))
+                                      :orthogonal? (:orthogonal? (second shape))
+                                      :p1 (:p2 (second shape)))
+                               fact (shapesFactory/createShapeFactory line)]
+                           (if (:orthogonal? (second shape))
+                             ((wrap reset-state)
+                               (->Creating (:p2 (second shape)) fact [] (:selection-save (assoc state :orthogonal? true))))
+                             ((wrap reset-state)
+                               (->Creating (:p-cur state) fact [] (:selection-save state)))))
 
            :else         ((wrap reset-state)
                            (->Drawing [] (:selection-save state)(:p-cur state))))))

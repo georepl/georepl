@@ -73,15 +73,16 @@
       (is (equals? [-1.0 0.0] (vec-ortho w))))
 
     (testing "length and dist"
-      (is (= 10.0 (length [6 8])))
-      (is (= 325.0 (length [0 325])))
-      (is (= 18.0 (length [18 0])))
-      (is (= 10.0 (length [-6 8])))
-      (is (= 18.0 (length [-18 0])))
-      (is (= 10.0 (length [6 -8])))
-      (is (= 325.0 (length [0 -325])))
-      (is (= 10.0 (length [-6 -8])))
-      (is (= 0.0 (length [0 0])))
+      (is (equals? 7 (dist [16] [9])))
+      (is (equals? 10.0 (length [6 8])))
+      (is (equals? 325.0 (length [0 325])))
+      (is (equals? 18.0 (length [18 0])))
+      (is (equals? 10.0 (length [-6 8])))
+      (is (equals? 18.0 (length [-18 0])))
+      (is (equals? 10.0 (length [6 -8])))
+      (is (equals? 325.0 (length [0 -325])))
+      (is (equals? 10.0 (length [-6 -8])))
+      (is (equals? 0.0 (length [0 0])))
       (is (equals? 2.1213203435596424 (length v)))
       (is (equals? 1 (length w)))
       (is (equals? 6.670832032063167 (dist p q))))
@@ -105,6 +106,25 @@
       (is (nearly-zero? (angle [8 -49 -1079] [8 -49 -1079])))
       )))
 
+
+(deftest project-line-test
+  (testing "zero-length-line"
+    (let [p1 [100 100]
+          p2 p1]
+      (is (equals? p1 (project-line [20 90] p1 p2)))))
+  (testing "almost-zero-length-line"
+    (let [p1 [100 100]
+          p2 [100 (+ 100 (* EPS EPS))]]
+      (is (equals? p1 (project-line [20 90] p1 p2)))))
+  (testing "standard situations orthogonal to x/y axes"
+    (let [p1 [100 100]
+          p2 [100 200]]
+      (is (equals? [150 200] (project-line [150 90] p1 p2)))))
+  (testing "standard situations non-orthogonal to x/y"
+    (let [p1 [10 10]
+          p2 [20 30]]
+      (is (equals? [32 24] (project-line [30 20] p1 p2)))))
+  )
 
 (deftest vec-rotate-center-test
   (let [p [0.0 5]
