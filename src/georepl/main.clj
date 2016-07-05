@@ -59,7 +59,7 @@
       (Integer/parseInt sNum))))
 
 
-;; create a filename which doesn't exist yet. The file name pattern is <root from config><first new number>.grl
+;; create a new unique filename. The file name pattern is <root from config><first new number>.grl
 (defn- new-unique-filename [files]
   (let [name-root (:new-drawing-name-root config/Configuration)
         temp-files (filter #(str/starts-with? % name-root) files)]
@@ -122,7 +122,7 @@
 
 
 ;; Start gui frame with the selected drawing. This code is injected into draw-framework
-;; and is started when the galery frame is done (synchronization).
+;; and is started when the gallery frame is done (synchronization).
 (defn- start-existing-drawing [filename]
   (let [size [800 800]
         files (.list (io/file (:drawings-directory config/Configuration)))]

@@ -1,13 +1,7 @@
 (ns georepl.freehand
   (:require [georepl.mathlib :as math]
-            [georepl.shapes :as shapes]))
-
-
-;; these are going to be individual user values someday ...
-;;
-(def short-range 5)
-(def snap-duration 1000)
-(def dash-speed 0.9)
+            [georepl.shapes :as shapes]
+            [georepl.configuration :as config]))
 
 
 ;;
@@ -26,7 +20,6 @@
     (let [v (math/vec-sub (last trace)(first trace))]
       (/ (math/length (coordinates v))
          (max 1 (math/abs (- t1 t2)))))))
-;         (max 1 (math/abs (timestamp v)))))))
 
 
 ; take a random subset of the contour including start and end points in order to avoid pixel-driven Manhattan geometry
@@ -85,7 +78,7 @@
 ;; create geometric objects from drawn input
 ;;
 (defn- analyze-straight-line [elems t1 t2]
-  (if (> (dash-velocity elems t1 t2) dash-speed)
+  (if (> (dash-velocity elems t1 t2) (:dash-speed config/Configuration))
     (assoc (shapes/constructLine (last elems) (first elems) 0) :type :dashed)
     (shapes/constructLine (last elems) (first elems))))
 

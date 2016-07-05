@@ -4,7 +4,8 @@
             [georepl.draw-primitives :as dp]
             [quil.core :as quil]
             [quil.middleware :as m]
-            [georepl.gui :as gui]
+            [georepl.gui-base :as gui-base]
+;            [georepl.gui :as gui]
             [georepl.gallery :as gallery]))
 
 
@@ -20,22 +21,22 @@
 ;(quil/frame-rate 5)
 
   ; initial state
-  (gui/init))
+  (gui-base/init))
 
 
 (defn- draw-gui [state]
   (quil/background 255)
-  (gui/draw state))
+  (gui-base/draw state))
 
 (defn- key-pressed-gui [state key]
 ;(prn "KeyCode:" (:key-code key))
   (case (:key-code key)
-    10  (gui/key-pressed state :ok)
-    27  (gui/key-pressed state :esc)
-    82  (gui/key-pressed state :redo)
-    83  (gui/key-pressed state :save)
-    90  (gui/key-pressed state :undo)
-        (gui/key-pressed state (:key key))))
+    10  (gui-base/key-pressed state :ok)
+    27  (gui-base/key-pressed state :esc)
+    82  (gui-base/key-pressed state :redo)
+    83  (gui-base/key-pressed state :save)
+    90  (gui-base/key-pressed state :undo)
+        (gui-base/key-pressed state (:key key))))
 
 
 ;;
@@ -48,13 +49,13 @@
     :title "GeoRepl"
     :setup setup-gui
     :draw draw-gui
-    :update (gui/wrap gui/update-frame)
-    :mouse-pressed (gui/wrap gui/mouse-pressed)
-    :mouse-released (gui/wrap gui/mouse-released)
-    :mouse-dragged (gui/wrap gui/mouse-dragged)
-    :mouse-moved (gui/wrap gui/mouse-moved)
+    :update gui-base/update-frame
+    :mouse-pressed gui-base/mouse-pressed
+    :mouse-released gui-base/mouse-released
+    :mouse-dragged gui-base/mouse-dragged
+    :mouse-moved gui-base/mouse-moved
     :key-pressed key-pressed-gui
-    :on-close (gui/wrap gui/on-close)
+;    :on-close (gui/wrap gui/on-close)
     :middleware [m/fun-mode])
   nil)
 
@@ -67,7 +68,7 @@
   (quil/no-fill)
 
 ;; reduced frame rate for testing purposes
-;(quil/frame-rate 5)
+(quil/frame-rate 5)
 
   ; initial state
   (gallery/init size drw-list f-on-close))
