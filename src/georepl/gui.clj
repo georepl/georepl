@@ -32,8 +32,16 @@
   (if (empty? coll)
     nil
     (first
+      (first
+        (sort #(compare (last %1)(last %2))
+          (map #(list % (math/dist % p)) coll))))))
+
+(defn- next-element [p-list p]
+  (if (empty? p-list)
+    nil
+    (first
       (sort #(compare (last %1)(last %2))
-        (map #(shapes/next-point % p) coll)))))
+        (map #(shapes/next-point % p) p-list)))))
 
 (defn get-shape [trace]
   (freehand/analyze-shape trace))
@@ -49,6 +57,7 @@
   (picked [this p])
   (snapped [this p])
   (dashed [this trace])
+  (dragging [this])
   (dragged [this trace elem])
   (moved [this p])
   (context [this f])
@@ -84,7 +93,7 @@
                   (shapes/constructPoint p)))))
 
 (defn- modify-mode [state p]
-(prn "Modify")
+;(prn "Modify")
   ((wrap reset-state)
     (->Modifying p (:redo-stack state) (:selection state))))
 
@@ -112,7 +121,7 @@
 ;;
 (defrecord Drawing [redo-stack selection] IGui
   (reset-state [this]
-(prn "->Drawing" (count selection))
+;(prn "->Drawing" (count selection))
     (-> this
      (assoc :redo-stack redo-stack
             :selection selection
@@ -121,21 +130,18 @@
             :show-context? false)))
 
   (draw-temporary [this]
-;(prn "Drawing.draw-temporary")
     (when (:show-trace? this)
-      (dp/draw-element {:params (:trace this)}))
+      (dp/draw-element {:params (:trace this) :visible 1} :green))
     this)
 
   (picked [this p]
-(prn "Drawing picked!" p (count (:selection this)))
+;(prn "Drawing picked!" p (count (:selection this)))
     (let [q (conj p nil)]
       (dragged this [q q] nil)))
 
   (snapped [this p]
 ;(prn "Drawing snapped!" p (nil? this))
-    (if-let [[elem q d] (next-point-on-element
-                          (elements/list-elems)
-                          p)]
+    (if-let [q (next-point-on-element (elements/list-points) p)]
       ((wrap reset-state)
         (->Creating (:redo-stack this)
                     (:selection this)
@@ -145,29 +151,34 @@
 
   ;; remove the previously drawn element and return to initial drawing mode
   (dashed [this trace]
-(prn "Drawing dashed" (:selection this))
+;(prn "Drawing dashed" (:selection this))
     (if-let [e (elements/pop-elem)]
       ((wrap reset-state)
          (->Drawing (cons e (:redo-stack this)) (:selection this)))
       ((wrap reset-state)
          (->Drawing [] (:selection this)))))
 
+  (dragging [this]
+    (assoc this :show-trace? true))
+
   (dragged [this trace e]
-;(prn "Drawing dragged!" (nil? this))
-    (let [elem (create-elem this trace e)]
+;(prn "Drawing dragged!" (:ortho-polyline? this))
+    (let [state (assoc this :show-trace? false)
+          elem (create-elem state trace e)]
       (if (= (:type elem) :dashed)
-        (dashed this trace)
+        (dashed state trace)
         ((wrap reset-state)
-          (->Creating (:redo-stack this)
-                      (:selection this)
+          (->Creating (:redo-stack state)
+                      (:selection state)
                       (shapesFactory/createShapeFactory elem))))))
 
   (context [this f]
+;(prn "Drawing context" (:selection this)(count (:trace this)))
     (let [p (take 2 (first (:trace this)))]
       (f this p)))
 
   (moved [this p]
-    this)
+    (assoc this :trace[]))
 
   (post-update-frame [this]
     this))
@@ -212,7 +223,7 @@
                             :show-context? false
                             :back-to-drawing? false
                             :context-menu (shapesFactory/current-dialog factory))]
-(prn "->Creating" (count (:selection this)) "=>" (count (:selection state)))
+;(prn "->Creating" (count (:selection this)) "=>" (count (:selection state)))
       state))
 
   (draw-temporary [this]
@@ -231,8 +242,7 @@
         this)))
 
   (snapped [this p]
-(prn "Creating snapped:" p (nil? this))
-    (if-let [[elem q d] (next-point-on-element (elements/list-elems) p)]
+    (if-let [q (next-point-on-element (elements/list-points) p)]
       (assoc (picked this q) :back-to-drawing? true)
       (picked this p)))
 
@@ -241,16 +251,18 @@
     ((wrap reset-state)
       (->Drawing (:redo-stack this) (:selection-save this))))
 
+  (dragging [this]
+    this)
+
   (dragged [this trace elem]
 ;(prn "Creating dragged:" (nil? this))
     (assoc this :factory (shapesFactory/refresh (:factory this) (first trace)))
     this)
 
   (context [this f]
+;(prn "Creating context" (:selection this)(count (:trace this)))
     (let [p (take 2 (first (:trace this)))
           ret (f (:factory this) p)]
-;(prn "Creating.context THIS:" this)
-;(prn "Creating.context RET:" ret)
       (assoc this :factory ret)))
 
   (moved [this p]
@@ -267,8 +279,11 @@
 ;;
 ;; mofifications mode
 ;;
+(defn- show-pointlist [state p]
+  (assoc state :show-pointlist? (not (:show-pointlist? state))))
+
 (defn- create-compound [this p]
-(prn "create compound")
+;(prn "create compound")
   this)
 
 (defn- drawing-mode [this p]
@@ -279,7 +294,8 @@
   (assoc state :show-context? false))
 
 (defn- modifying-dialog []
-  (list {:s "Create Compound" :f create-compound :highlight 0}
+  (list {:s "Toggle Points" :f show-pointlist :highlight 0}
+        {:s "Create Compound" :f create-compound :highlight 0}
         {:s "Drawing Mode" :f drawing-mode :highlight 0}
         {:s "Cancel" :f cancel-modifying :highlight 1}))
 
@@ -292,44 +308,55 @@
 
 (defrecord Modifying [p-cur redo-stack selection-save] IGui
   (reset-state [this]
-(prn "->Modifying")
+;(prn "->Modifying")
     (-> this
        (assoc :redo-stack redo-stack
               :selection-save selection-save
               :selection (modifying-dialog)
+              :context-menu (modifying-dialog)
               :current-elements []
+              :show-pointlist? false
               :show-context? false
               :p-list [])))
 
   (draw-temporary [this]
-(prn "Modifying.draw-temporary")
+;(prn "Modifying.draw-temporary")
     (doseq [e (:current-elements this)]
       (dp/draw-element e :red))
     (doseq [e (:p-list this)]
       (dp/draw-point e :green))
+    (when (:show-pointlist? this)
+      (doseq [p (elements/list-points)]
+        (dp/draw-point p :blue)))
     this)
 
   ;; pick the nearest element and add it to elements list
   (picked [this p]
-(prn "Mod. picked")
-    (if-let [[elem p d] (next-point-on-element (elements/list-elems) p)]
+;(prn "Mod. picked" (:show-pointlist? this))
+    (if-let [[elem p d] (next-element (elements/list-elems) p)]
       (assoc this :current-elements (elem-in-out this elem))
       this))
 
   ;; snap the nearest point (characteristic points of elements or intersections etc.)
   (snapped [this p]
-(prn "Mod. snapped")
+;(prn "Mod. snapped")
       this)
 
+  ;; Let l be the line between the first and the last trace point.
+  ;; 1. if l intersects an existing shape: delete the part of the shape
   (dashed [this trace]
-(prn "Mod. dashed")
+;(prn "Mod. dashed")
+    this)
+
+  (dragging [this]
     this)
 
   (dragged [this trace elem]
-(prn "Mod. dragged")
+;(prn "Mod. dragged")
     this)
 
   (context [this f]
+;(prn "Modifying context" (:selection this)(count (:trace this)))
     (let [p (take 2 (first (:trace this)))]
       (f this p)))
 
@@ -345,7 +372,7 @@
 ;; framework functions outside of the above interface
 ;;
 (defn init[]
-(prn "INIT")
+;(prn "INIT")
   (dp/text-height (:shapes-label-size config/Configuration))
 ;  ((wrap reset-state) (->Modifying nil [] (modifying-dialog))))
   ((wrap reset-state) (->Drawing [] (drawing-dialog))))

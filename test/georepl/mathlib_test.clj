@@ -126,6 +126,31 @@
       (is (equals? [32 24] (project-line [30 20] p1 p2)))))
   )
 
+(deftest on-straight-line?-test
+  (testing "on-straight-line?"
+    (is (on-straight-line? [55.0 55.0][0.0 0.0][100.0 100.0]))
+    (is (on-straight-line? [55.0 0.0][55.0 -100.0][55.0 100.0]))
+    (is (on-straight-line? [0.0 55.0][-100.0 55.0][100.0 55.0]))
+    (is (not (on-straight-line? [32.0 23.0][0.0 0.0][100.0 100.0])))
+    (is (not (on-straight-line? [32.0 23.0][55.0 -100.0][55.0 100.0])))
+    (is (not (on-straight-line? [32.0 23.0][-100.0 55.0][100.0 55.0])))
+  ))
+
+(deftest on-line?-test
+  (testing "on-line?"
+    (is (on-line? [55.0 55.0][0.0 0.0][100.0 100.0]))
+    (is (not (on-line? [155.0 155.0][0.0 0.0][100.0 100.0])))
+    (is (on-line? [55.0 0.0][55.0 -100.0][55.0 100.0]))
+    (is (not (on-line? [55.0 -100.1][55.0 -100.0][55.0 100.0])))
+    (is (not (on-line? [55.0 100.1][55.0 -100.0][55.0 100.0])))
+    (is (on-line? [0.0 55.0][-100.0 55.0][100.0 55.0]))
+    (is (not (on-line? [-100.1 55.0][-100.0 55.0][100.0 55.0])))
+    (is (not (on-line? [100.1 55.0][-100.0 55.0][100.0 55.0])))
+    (is (not (on-line? [32.0 23.0][0.0 0.0][100.0 100.0])))
+    (is (not (on-line? [32.0 23.0][55.0 -100.0][55.0 100.0])))
+    (is (not (on-line? [32.0 23.0][-100.0 55.0][100.0 55.0])))
+  ))
+
 (deftest vec-rotate-center-test
   (let [p [0.0 5]
         q [-1.0 1]]
@@ -179,39 +204,133 @@
                          (project-point-onto-circle [400 400] [200 200] 100)))))
     ))
 
+(deftest on-circle?-test
+  (testing "on-circle?-test"
+    (is (on-circle? [20.0 10.0][20.0 20.0] 10.0))
+    (is (on-circle? [20.0 30.0][20.0 20.0] 10.0))
+    (is (on-circle? [10.0 20.0][20.0 20.0] 10.0))
+    (is (not (on-circle? [10.0 30.0][20.0 20.0] 10.0)))
+    (is (not (on-circle? [20.0 20.0][20.0 20.0] 10.0)))
+    ))
+
+(deftest on-arc?-test
+  (testing "on-arc?-test"
+    (is (on-arc? [20.0 10.0][20.0 20.0] 10.0 [10.0 20.0][30.0 20.0]))
+    (is (not (on-arc? [20.0 10.0][20.0 20.0] 10.0 [30.0 20.0][10.0 20.0])))
+    ))
+
 (deftest intersect-circles-test
   (testing "intersect-circles-test"
+    (is (= [](intersect-circles [0 1] 2 [0 1] 2)))
+    (is (= [](intersect-circles [0 1] 2 [0 1] 3)))
+    (is (= [](intersect-circles [0 1] 2 [0 1] 2)))
+    (is (= [](intersect-circles [0 0] 2 [0 1] 0)))
+    (is (= [](intersect-circles [6 10] 1 [0 0] 2)))
+    (let [[p q](intersect-circles [0 1] 2 [0 -1] 2)]
+      (is (and
+        (equals? p [-1.732051 0.0])
+        (equals? q [1.732051 0.0]))))
     (let [[p q] (intersect-circles [50 50] 100 [80 60] 80)]
-    (is (and
-          (equals? p [140.70253 138.10760])
-          (equals? q [97.29746 138.10760]))))))
+      (is (and
+        (equals? p [140.702534 7.892397])
+        (equals? q [97.297466 138.107603]))))))
+
+(deftest intersect-circle-arc-test
+  (testing "intersect-circle-arc-test"
+    (let [[p q] (intersect-circles [5 5] 3 [7 4] 2)]
+      (is (and
+        (equals? p [6.105573 2.211146])
+        (equals? q [7.894427 5.788854]))))
+    (is (= 2 (count (intersect-circle-arc [5 5] 3 [7 4] 2 [5 4][7 6]))))
+    (is (= 1 (count (intersect-circle-arc [5 5] 3 [7 4] 2 [5 4][7 2]))))
+    (is (= 1 (count (intersect-circle-arc [5 5] 3 [7 4] 2 [7 6][7 2]))))
+    (is (= 1 (count (intersect-circle-arc [5 5] 3 [7 4] 2 [7 2][7 6]))))
+    (is (= 1 (count (intersect-circle-arc [5 5] 3 [7 4] 2 [5 4][9 4]))))
+))
+
+(deftest intersect-arcs-test
+  (testing "intersect-circle-arc-test"
+    (is (= 2 (count (intersect-arcs [5 5] 3 [5 2][5 8] [7 4] 2 [5 4][7 6]))))
+    (is (= 1 (count (intersect-arcs [5 5] 3 [5 2][5 8] [7 4] 2 [7 2][7 6]))))
+    (is (= 1 (count (intersect-arcs [5 5] 3 [2 5][8 5] [7 4] 2 [5 4][7 6]))))
+    (is (= 0 (count (intersect-arcs [5 5] 3 [5 8][5 2] [7 4] 2 [5 4][7 6]))))
+))
+
+(deftest intersect-straight-lines-test
+  (testing "intersect-straight-lines"
+    (is (empty? (intersect-straight-lines [100 100][100 600][100 100][100 600])))
+    (is (empty? (intersect-straight-lines [100 100][100 600][300 700][300 -42])))
+    (is (empty? (intersect-straight-lines [100 100][600 100][3.7 100][15 100])))
+    (is (empty? (intersect-straight-lines [100 100][700 700][30 30][-14.0 -14.0])))
+    (let [[p1] (intersect-straight-lines [-10.0 0.0][10.0 0.0][0.0 -40.0][0.0 -42.0])]
+      (is (equals? 0.0 (length (vec-sub p1 [0.0 0.0])))))
+    (let [[p2] (intersect-straight-lines [-1.0 -1.0][1.0 1.0][-1.0 1.0][1.0 -1.0])]
+      (is (equals? 0.0 (length (vec-sub p2 [0.0 0.0])))))
+    (let [[p3] (intersect-straight-lines [-10.0 -10.0][10.0 10.0][-8.0 8.0][42.0 -42.0])]
+      (is (equals? 0.0 (length (vec-sub p3 [0.0 0.0])))))
+    (let [[p4] (intersect-straight-lines [-2.0 -2.0][2.0 2.0][-1.0 1.0][2.0 -2.0])]
+      (is (equals? 0.0 (length (vec-sub p4 [0.0 0.0])))))
+    ))
 
 (deftest intersect-lines-test
   (testing "intersect-lines"
-    (is (nil? (intersect-lines [[100 100] [100 600]][[300 700] [300 -42]])))
-    (is (nil? (intersect-lines [[100 100] [600 100]][[3.7 100] [15 100]])))
-    (is (nil? (intersect-lines [[100 100] [700 700]][[30 30] [-14.0 -14.0]])))
-    (is (equals? 0.0 (length
-                        (vec-sub (intersect-lines [[-10.0 0.0] [10.0 0.0]][[0.0 -40.0] [0.0 -42.0]]) [0.0 0.0]))))
-    (is (equals? 0.0 (length
-                        (vec-sub (intersect-lines [[-1.0 -1.0] [1.0 1.0]][[-1.0 1.0] [1.0 -1.0]]) [0.0 0.0]))))
-    (is (equals? 0.0 (length
-                        (vec-sub (intersect-lines [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]]) [0.0 0.0]))))
-    (is (equals? 0.0 (length
-                        (vec-sub (intersect-lines [[-2.0 -2.0] [2.0 2.0]][[-1.0 1.0] [2.0 -2.0]]) [0.0 0.0]))))
+    (is (empty? (intersect-lines [100 100][100 600][100 100][100 600])))
+    (is (empty? (intersect-lines [100 100][100 600][300 700][300 -42])))
+    (is (empty? (intersect-lines [100 100][600 100][3.7 100][15 100])))
+    (is (empty? (intersect-lines [100 100][700 700][30 30][-14.0 -14.0])))
+    (is (empty? (intersect-lines [-10.0 0.0][10.0 0.0][0.0 -40.0][0.0 -42.0])))
+    (let [[p1] (intersect-lines [-10.0 0.0][10.0 0.0][0.0 42.0][0.0 -42.0])]
+      (is (equals? 0.0 (length (vec-sub p1 [0.0 0.0])))))
+    (let [[p2] (intersect-lines [-10.0 -10.0][10.0 10.0][-8.0 8.0][42.0 -42.0])]
+      (is (equals? 0.0 (length (vec-sub p2 [0.0 0.0])))))
     ))
 
-(deftest intersect-line-segments-test
-  (testing "intersect-line-segments"
-    (is (nil? (intersect-line-segments [[100 100] [100 600]][[300 700] [300 -42]])))
-    (is (nil? (intersect-line-segments [[100 100] [600 100]][[3.7 100] [15 100]])))
-    (is (nil? (intersect-line-segments [[100 100] [700 700]][[30 30] [-14.0 -14.0]])))
-    (is (nil? (intersect-line-segments [[-10.0 0.0] [10.0 0.0]][[0.0 -40.0] [0.0 -42.0]])))
-    (is (equals? 0.0 (length
-                        (vec-sub (intersect-line-segments [[-10.0 0.0] [10.0 0.0]][[0.0 40.0] [0.0 -42.0]]) [0.0 0.0]))))
-    (is (equals? 0.0 (length
-                        (vec-sub (intersect-line-segments [[-10.0 -10.0] [10.0 10.0]][[-8.0 8.0] [42.0 -42.0]]) [0.0 0.0]))))
-    ))
+(deftest intersect-straight-line-circle-test
+  (testing "intersect-straight-line-circle: two common points"
+    (is (not-any? false? (map equals? [[0.707107 -0.707107][-0.707107 0.707107]] (intersect-straight-line-circle [-0.5 0.5][0.5 -0.5][0.0 0.0] 1.0))))
+    (is (not-any? false? (map equals? [[0.707107 0.292893][-0.707107 1.707107]] (intersect-straight-line-circle [-0.5 1.5][0.5 0.5][0.0 1.0] 1.0))))
+    (is (not-any? false? (map equals? [[1.707107 -0.707107][0.292893 0.707107]] (intersect-straight-line-circle [0.5 0.5][1.5 -0.5][1.0 0.0] 1.0))))
+    (is (not-any? false? (map equals? [[6.414214 6.414214][3.585786 3.585786]] (intersect-straight-line-circle [0.0 0.0][10.0 10.0][5.0 5.0] 2.0))))
+    (is (not-any? false? (map equals? [[-0.762380 2.152476][-3.468389 2.693678]] (intersect-straight-line-circle [-5 3][0 2][-2 3] 1.5))))
+    (is (= [[300.0 400.0][300.0 200.0]] (intersect-straight-line-circle [300.0 -1000.0][300.0 1000.0][300.0 300.0] 100.0)))
+    (is (= [[400.0 300.0][200.0 300.0]] (intersect-straight-line-circle [-1000.0 300.0][1000.0 300.0][300.0 300.0] 100.0))))
+  (testing "intersect-straight-line-circle: one common point"
+    (is (= [[0.0 5.0]] (intersect-straight-line-circle [-100.0 5.0][100.0 5.0][0.0 0.0] 5.0))))
+  (testing "intersect-straight-line-circle: no common point"
+    (is (empty? (intersect-straight-line-circle [0.0 0.0][1000.0 1000.0][300.0 500.0] 100.0)))
+    (is (empty? (intersect-straight-line-circle [100.0 -1000.0][100.0 1000.0][300.0 300.0] 100.0)))
+    (is (empty? (intersect-straight-line-circle [-1000.0 100.0][1000.0 100.0][300.0 300.0] 100.0)))))
+
+(deftest intersect-line-circle-test
+  (testing "two common points on line and circle"
+    (is (= 2 (count (intersect-line-circle [-5 3][0 2][-2 3] 1.5))))
+    )
+  (testing "two common points on straight line but only one between p1 and p2"
+    (is (= 1 (count (intersect-line-circle [-5 3][-2.5 2.5][-2 3] 1.5))))
+    (is (= 1 (count (intersect-line-circle [-2.5 2.5][0 2] [-2 3] 1.5))))
+    )
+  (testing "two common points on straight line but none between p1 and p2"
+    (is (= 0 (count (intersect-line-circle [0 2][5 1][-2 3] 1.5))))
+    )
+  (testing "one common point on line between p1 and p2"
+    (is (= [[-2.0 1.5]] (intersect-line-circle [-5 1.5][5 1.5][-2 3] 1.5)))
+    )
+  (testing "one common point on straight line but not between p1 and p2"
+    (is (empty? (intersect-line-circle [0 1.5][5 1.5][-2 3] 1.5)))
+    )
+  )
+
+(deftest intersect-line-arc-test
+  (testing "two common points on line and arc"
+    (is (= 2 (count (intersect-line-arc [0 0][4 2][3 2] 1 [2 2][3 300]))))
+    )
+  (testing "two common points on full circle but only one on arc"
+    (is (= 1 (count (intersect-line-arc [0 0][4 2][3 2] 1 [3 1][3 3]))))
+    )
+  (testing "two common points on full circle but none on arc"
+    (is (= 0 (count (intersect-line-arc [0 0][4 2][3 2] 1 [4 2][2 2]))))
+    )
+  )
 
 (deftest circumcircle-test
   (testing "circumcircle"

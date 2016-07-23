@@ -11,6 +11,8 @@
   (rotate-ref[this p angle])
   (scale[this factor])
   (scale-ref[this p factor])
+  (intersect [this shape])
+  (points [this])
   (form [this]))
 
 
@@ -46,6 +48,17 @@
     (-> this
       (assoc :p (math/vec-scale p-r (:p this) factor)
              :p-ref (math/vec-scale p-r (:p-ref this) factor))))
+
+  (intersect [this shape]
+    (case (:type shape)
+      :point  (if (math/equals? (:p this)(:p shape)) [(:p this)] [])
+      :line   (if (math/on-line? (:p this)(:p1 shape)(:p2 shape)) [(:p this)] [])
+      :circle (if (math/on-circle? (:p this)(:p-center shape)(:radius shape)) [(:p this)] [])
+      :arc    (if (math/on-arc? (:p this)(:p-center shape)(:radius shape)(:p-start shape)(:p-end shape)) [(:p this)] [])
+              []))
+
+  (points [this]
+    [(:p this)])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -93,6 +106,17 @@
     (assoc this :p1 (math/vec-scale p-r (:p1 this) factor)
                 :p2 (math/vec-scale p-r (:p2 this) factor)
                 :p-ref (math/vec-scale p-r (:p-ref this) factor)))
+
+  (intersect [this shape]
+    (case (:type shape)
+      :point  (if (math/on-line? (:p shape)(:p1 this)(:p2 this)) [(:p shape)] [])
+      :line   (math/intersect-lines (:p1 this)(:p2 this)(:p1 shape)(:p2 shape))
+      :circle (math/intersect-line-circle (:p1 this)(:p2 this)(:p-center shape)(:radius shape))
+      :arc    (math/intersect-line-arc (:p1 this) (:p2 this) (:p-center shape)(:radius shape)(:p-start shape)(:p-end shape))
+              []))
+
+  (points [this]
+    [(:p1 this)(:p2 this)])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -144,6 +168,18 @@
     (assoc (scale this factor) :p-center (math/vec-scale p-r (:p-center this) factor)
                                :p-ref (math/vec-scale p-r (:p-ref this) factor)))
 
+  (intersect [this shape]
+    (case (:type shape)
+      :point (if (math/on-circle? (:p shape)(:p-center this)(:radius this)) [(:p shape)] [])
+      :line (math/intersect-line-circle (:p1 shape)(:p2 shape)(:p-center this)(:radius this))
+      :circle (math/intersect-circles (:p-center this)(:radius this)(:p-center shape)(:radius shape))
+      :arc  (math/intersect-circle-arc (:p-center this)(:radius this)
+                                       (:p-center shape)(:radius shape)(:p-start shape)(:p-end shape))
+            []))
+
+
+  (points [this]
+    [])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -210,6 +246,18 @@
                                  :p-start (math/project-point-onto-circle (math/vec-add (:p-start this) v) pc radius)
                                  :p-end (math/project-point-onto-circle (math/vec-add (:p-end this) v) pc radius))))
 
+  (intersect [this shape]
+    (case (:type shape)
+      :point (if (math/on-arc? (:p shape)(:p-center this)(:radius this)(:p-start this)(:p-end this)) [(:p shape)] [])
+      :line (math/intersect-line-arc (:p1 shape)(:p2 shape)(:p-center this)(:radius this)(:p-start this)(:p-end this))
+      :circle (math/intersect-circle-arc (:p-center shape)(:radius shape)(:p-center this)(:radius this)(:p-start this)(:p-end this))
+      :arc  (math/intersect-arcs (:p-center this)(:radius this)(:p-start this)(:p-end this)
+                                 (:p-center shape)(:radius shape)(:p-start shape)(:p-end shape))
+            []))
+
+
+  (points [this]
+    [(:p-start this)(:p-end this)])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -263,6 +311,12 @@
   (scale-ref [this p-r factor]
     (assoc this :p-list (map #(math/vec-scale p-r % factor) (:p-list this))))
 
+  (intersect [this shape]
+;;NYI: ToBeDone
+    [])
+
+  (points [this]
+    (:p-list this))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -328,14 +382,36 @@
     (assoc this :elems (map #(scale-ref % p-r factor) (:elems this))
                 :p-ref (math/vec-scale p-r (:p-ref this) factor)))
 
+  (intersect [this shape]
+    (if-let [elems (:elems shape)]
+      (let [cl1 (take-while (comp not empty? second) (iterate (fn [[a c]](list (first c)(rest c))) [(first elems)(rest elems)]))
+            cl2 (map (fn[[a c]] (map (partial intersect a) c)) cl1)
+            cl3 (reduce concat (reduce concat cl2))]
+        (dedupe (sort cl3)))))
+
+
+  (points [this]
+    (dedupe
+      (sort
+        (map vec (apply concat (map points (:elems this)))))))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
 
-(defn constructCompound [elems]
-  (construct (->Compound elems)))
-
-
+(defn constructCompound
+  ([elems]
+    (construct (->Compound elems)))
+  ([elems key val & kvs]
+    (loop [k key
+           v val
+           col kvs
+           ret (constructCompound elems)]
+      (if-not col
+        (assoc ret k v)
+        (if (next col)
+          (recur (first col) (second col) (nnext col) (assoc ret k v))
+          (throw (IllegalArgumentException.
+                  "constructCompound expects even number of arguments; found odd number")))))))
 
 ;; 'text'
 ;;
@@ -370,6 +446,11 @@
                 :bottom-right (math/vec-scale p-r (:bottom-right this) factor)
                 :p-ref (math/vec-scale p-r (:p-ref this) factor)))
 
+  (intersect [this shape]
+    [])
+
+  (points [this]
+    [])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))

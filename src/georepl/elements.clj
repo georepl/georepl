@@ -20,7 +20,6 @@
 ;; reinitialize the whole elements stack
 (defn clear []
   (swap! elements assoc :stack []))
-;;  (swap! elements empty))
 
 
 (defn- elements-length []
@@ -85,7 +84,8 @@
   (let [shapes-list (filter
                       #(> (:visible %) 0)
                       (flatten (collect-shapes drw)))
-        new-drw {:drw-elem drw :shapes-list shapes-list}
+        points-list (dedupe (sort (concat (shapes/intersect drw drw)(shapes/points drw))))
+        new-drw {:drw-elem drw :shapes-list shapes-list :points-list points-list}
         new-stack (conj (:stack @elements) new-drw)]
     (swap! elements assoc :stack new-stack)
     (reinit-repl-server elem)
@@ -114,6 +114,10 @@
 
 (defn list-elems []
   (:shapes-list (tos)))
+
+
+(defn list-points []
+  (:points-list (tos)))
 
 
 (defn spit-drawing []

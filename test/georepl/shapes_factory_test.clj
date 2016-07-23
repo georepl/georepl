@@ -103,7 +103,7 @@
         fact (createShapeFactory e)]
     (testing "create and current-element"
       (is (= e (current-element fact)))
-      (is (= false (:complete? fact))))
+      (is (= 4 (count (:quector fact)))))
     (testing "refresh"
       (let [fact-new1 (refresh fact [100 100])
             elem-new1 (current-element fact-new1)

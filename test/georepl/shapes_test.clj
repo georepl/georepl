@@ -4,6 +4,44 @@
             [georepl.shapes :refer :all]))
 
 
+(def Pnt1 (constructPoint [5.0 10.0]))
+(def Pnt2 (constructPoint [0.0 0.0]))
+(def Pnt3 (constructPoint [-2.0 7.0]))
+(def Pnt4 (constructPoint [-1.0 -1.0]))
+(def Pnt5 (constructPoint [-1.0 -1.0]))
+
+(def Lin1 (constructLine [2.0 4.0][9.0 11.0]))
+(def Lin2 (constructLine [-6.0 6.0][14.0 11.0]))
+(def Lin3 (constructLine [10.0 8.0][13.0 7.0]))
+
+(def Cir1 (constructCircle [6.0 10.0] 1.0))
+(def Cir2 (constructCircle [0.0 0.0] 2.0))
+
+(def Arc1 (constructArc [5.0 8.0] 2.0 [7.0 8.0][5.0 6.0]))
+
+(def e1 (constructPoint [567 524]))
+(def e2 (constructCircle [567 524] 30))
+(def e3 (constructLine [300 250][567 524]))
+(def e4 (constructLine [125 300][570 520]))
+(def e5 (constructLine [224  42][224  24]))
+
+
+;; intersections:
+;;
+;; Pnt1 x Arc1 = Pnt1 x Cir2 = [[5.0 10.0]]
+;; Pnt2, Pnt4, Cir1, Lin3: no intersections
+;; Lin1 x Lin2 = [[7.333333 9.333333]]
+;; Lin1 x Arc1 = [[4.177124 6.177124][6.822876 8.822876]]
+;; Lin2 x Arc1 = [[3.016201 8.254050][6.470588 9.117647]]
+;; Lin2 x Cir2 = [[6.0 9.0][6.630858 9.157714]]
+;; Cir2 x Arc1 = [[5.0 10.0][6.470588 9.117647]]
+;;
+;; e5: no intersection
+;; e1 x e3 : [[567 524]]
+;; e2 x e4 : [[542.648790 506.478054]]
+;; e2 x e3 : [[546.063027 502.514117]]
+;; e3 x e4 : [[556.690141 513.419845]]
+
 (deftest point-test
   (let [e1 (constructPoint [100 100])]
     (testing "constructPoint"
@@ -54,7 +92,27 @@
         (is (= :point    (:type e2)))
         (is (= 1         (:visible e2)))
         (is (math/equals? [75 75] (:p-ref e2)))
-        (is (math/equals? (:p e2)(:p-ref e2)))))))
+        (is (math/equals? (:p e2)(:p-ref e2)))))
+
+    (testing "intersect"
+      (let [e2 (scale-ref e1 [50 50] 0.5)]
+        (is (= :point    (:type e2)))
+        (is (= 1         (:visible e2)))
+        (is (math/equals? [75 75] (:p-ref e2)))
+        (is (math/equals? (:p e2)(:p-ref e2))))
+      (let [pts (apply concat
+                  (map (partial intersect Pnt5) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1]))]
+        (is (not-any? false? (map math/equals? pts [[-1 -1]]))))
+      )
+
+    (testing "points"
+      (is (not-any? false? (map math/equals? (sort (points e1))(sort [[100 100]])))))
+
+;;    (testing "form"
+;;      (let [e2 (constructPoint [42 43])
+;;            e3 (assoc e2 :name "test")]
+;;        (is (= "test" (form e3)))))
+    ))
 
 
 (deftest line-test
@@ -120,6 +178,21 @@
         (is (math/equals? (:p1 e2) (:p-ref e2)))
         (is (math/equals? [75 75] (:p1 e2)))
         (is (math/equals? [125 75] (:p2 e2)))))
+
+    (testing "intersect"
+      (let [pts1 (sort (apply concat (map (partial intersect Lin1) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1])))
+            pts2 (sort (apply concat (map (partial intersect Lin2) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1])))
+            pts3 (sort (apply concat (map (partial intersect Lin3) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1])))]
+        (is (not-any? false? (map math/equals? pts1 (sort [[7.333333 9.333333][6.822876 8.822876][4.177124 6.177124]]))))
+        (is (not-any? false? (map math/equals? pts2 (sort [[-2 7][7.333333 9.333333][6.470588 9.117647][6.0 9.0][6.630858 9.157714][3.016201 8.254050]]))))
+        (is (not-any? false? (map math/equals? pts3 (sort []))))
+    ))
+
+    (testing "points"
+      (is (not-any? false? (map math/equals? (sort (points e1))(sort [[100 100][200 100]])))))
+
+;;    (testing "form"
+;;      ())
 ))
 
 
@@ -185,6 +258,19 @@
         (is (math/equals? (:p-ref e2) (:p-center e2)))
         (is (math/equals? (* 2.0 (:radius e1)) (:radius e2)))
         (is (math/equals? [100 300] (:p-center e2)))))
+
+    (testing "intersect"
+      (let [pts1 (dedupe (sort (apply concat (map (partial intersect Cir1) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1]))))
+            pts2 (dedupe (sort (apply concat (map (partial intersect Cir2) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1]))))]
+        (is (not-any? false? (map math/equals? pts1 (sort [[5.0 10.0][6.0 9.0][6.470588 9.117647][6.6 9.2]]))))
+        (is (empty? pts2))
+    ))
+
+    (testing "points"
+      (is (empty? (points e1))))
+
+;;    (testing "form"
+;;      ())
     ))
 
 
@@ -281,6 +367,20 @@
         (is (math/equals? [100 50] (:p-center e2)))
         (is (math/equals? [150 50] (:p-start e2)))
         (is (math/equals? [100 100] (:p-end e2)))))
+
+
+    (testing "intersect"
+      (let [pts1 (dedupe (sort (apply concat (map (partial intersect Arc1) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1]))))]
+        (is (not-any? false? (map math/equals? (sort pts1) (sort [[3.016201 8.254050][4.177124 6.177124][5.0 10.0][6.822876 8.822876][6.6 9.2][6.630858 9.157714]]))))
+    ))
+
+
+    (testing "points"
+      (is (not-any? false? (map math/equals? (sort (points e1))(sort [[300 200] [200 300]])))))
+
+
+;;    (testing "form"
+;;      ())
     ))
 
 
@@ -353,6 +453,14 @@
         (let [e3 (scale-ref e1 [4 3] 0.5)]
           (is (= (count (:p-list e1))(count (:p-list e3))))
           (is (every? true? (map math/equals? [[2.5 0.0] [3.0 1.0] [3.5 0.0]] (:p-list e3)))))))
+
+
+    (testing "points"
+      (is (not-any? false? (map math/equals? (sort (points e0))(sort [[-400 300][-300 -100][-200 -200][-100 100][0 0][100 -100][200 100][100 200]])))))
+
+
+;;    (testing "form"
+;;      ())
     ))
 
 
@@ -371,6 +479,15 @@
     (testing "constructCompound with empty elements list"
       (let [e0 (constructCompound [])]
        (is (= :compound (:type e0)))
+       (is (= 0         (:visible e0)))
+       (is (empty? (:p-ref e0)))))
+
+    (testing "constructCompound with optional key values"
+      (let [e0 (constructCompound [] :anykey :foo :anyotherkey :buz)]
+       (is (= :compound (:type e0)))
+       (is (= :none (:subtype e0)))
+       (is (= :foo (:anykey e0)))
+       (is (= :buz (:anyotherkey e0)))
        (is (= 0         (:visible e0)))
        (is (empty? (:p-ref e0)))))
 
@@ -436,6 +553,28 @@
         (is (math/equals? [175 100] (:p-ref (second (:elems e2)))))
         (is (math/equals? [100 350] (:p-ref (last (:elems e2)))))
         (is (math/equals? [90 150] (:p-ref (first (reverse (butlast (:elems e2)))))))))
+
+    (testing "intersect"
+      (let [Drw1 (constructCompound [Lin1 Lin2 Cir1 Arc1] :subtype :drawing)
+        pts1 (intersect Drw1 Drw1)]
+        (is (not-any? false? (map math/equals? (sort pts1) (sort [[3.016201 8.254050][4.177124 6.177124][5.0 10.0][6.0 9.0][6.470588 9.117647][6.6 9.2][6.630858 9.157714][6.822876 8.822876][7.333333 9.333333]])))))
+      (let [Drw2 (constructCompound [Lin3 Pnt2 Lin2 Cir2 Pnt1] :subtype :drawing)
+            pts2 (intersect Drw2 Drw2)]
+        (is (empty? pts2)))
+      (let [Drw3 (constructCompound [Lin1 Lin2 Arc1] :subtype :drawing)
+            pts3 (intersect Drw3 Drw3)]
+        (is (not-any? false? (map math/equals? (sort pts3) (sort [[3.016201 8.254050][4.177124 6.177124][6.630858 9.157714][6.822876 8.822876][7.333333 9.333333]])))))
+      (let [Drw4 (constructCompound [e1 e2 e3 e4 e5] :subtype :drawing)
+            pts4 (intersect Drw4 Drw4)]
+        (is (not-any? false? (map math/equals? (sort pts4) (sort [[542.648790 506.478054] [546.063027 502.514117] [556.690141 513.419845]])))))
+      )
+
+    (testing "points"
+      (let [Drw0 (constructCompound [Pnt3 Lin2 Cir2 Pnt1 Lin1 Arc1 Cir1 Pnt4])]
+        (is (not-any? false? (map math/equals? (sort (points Drw0))(sort [[-2.0 7.0][-6.0 6.0][14.0 11.0][5.0 10.0][2.0 4.0][9.0 11.0][7.0 8.0][5.0 6.0][-1.0 -1.0]]))))))
+
+;;    (testing "form"
+;;      ())
     ))
 
 
@@ -486,7 +625,7 @@
         (is (math/equals? [-100 200] (:top-left e2)))
         (is (math/equals? [-79.99999999999997 450.0] (:bottom-right e2)))))
 
-    (testing "scale"
+    (testing "scale"0
       (let [e2 (scale e1 3.0)]
         (is (= (:type e1)(:type e2)))
         (is (= (:visible e1) (:visible e2)))
@@ -503,4 +642,8 @@
         (is (math/equals? [137.5 70.0] (:p-ref e2)))
         (is (math/equals? [75 75] (:top-left e2)))
         (is (math/equals? [200.0 65.0] (:bottom-right e2)))))
+
+;;    (testing "form"
+;;      ())
 ))
+

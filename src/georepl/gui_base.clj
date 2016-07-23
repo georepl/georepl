@@ -7,12 +7,12 @@
             [georepl.configuration :as config]))
 
 ;;
-;; NYI: strange bug: There is a state attribute :context-menu which is only there to work around a bug which may
+;; NYI: weird bug: There is a state attribute :context-menu which is only there to work around a bug which may
 ;; be in the quil framework. :context-menu should always have the same value as :selection. Both values are set
-;; in the record constructors in gui.clj. The value of :selection having been changed in the constructor the next
+;; in the record constructors in gui.clj. The value of :selection was changed in the constructor: The next
 ;; time the status shows it comes with the former value of :selection in the update-frame function (or whatever is called after the constructor).
 ;; Other attributes in the record keep their constructor-set values, however. Simply renaming :selection does not help.
-;; So :context-menu is initialized with the same value as :selection in the constructor and :selection is reset
+;; So, as a workaround, :context-menu is initialized with the same value as :selection in the constructor and :selection is reset
 ;; with the value of :context-menu in reinit-state.
 ;;
 
@@ -35,7 +35,7 @@
 
 
 (defn- set-context-mode [this p]
-;(prn "guibase.set-context-mode:" this)
+;(prn "guibase.set-context-mode:" (count (:selection this)))
  (let [sel (dialog/dialog p (:selection this))
        state (assoc this :selection sel :show-context? true)]
 ;(prn "set-context-mode" (count (:selection state))(count (:context-menu state)))
@@ -43,7 +43,7 @@
 
 
 (defn key-pressed [this key]
-(prn "KEY-pressed" this)
+;(prn "KEY-pressed" this)
   (case key
     :up     (if-let [sel (dialog/select :up (:selection this))]
               (assoc this :selection sel)
@@ -142,7 +142,7 @@
 
 (defn dragging [this]
 ;(prn "dragging, TraceLen:" (count (:trace this)))
-  this)
+  (gui/dragging this))
 
 (defn dragged [this elem]
 ;(prn "dragged" (last (:trace this))(first (:trace this))(:mouse-moved? this))
@@ -156,12 +156,12 @@
 
 (defn _idle [this x]
   (when (= x 1)
-(prn (last (first (:trace this)))
+;(prn (last (first (:trace this)))
      (gui/short-trace? (trace-length (:trace this)))
      (button-down-time-exceeded? (:trace this))
      (:button-released this)
      (count (:trace this))
-     x))
+     x)
   this)
 
 (defn idle [this x]

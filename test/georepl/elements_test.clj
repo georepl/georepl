@@ -1,15 +1,26 @@
 (ns georepl.elements-test
   (:require [clojure.test :refer :all]
             [georepl.elements :as elements]
+            [georepl.shapes :as shapes]
+            [georepl.mathlib :as math]
             [georepl.user :as user]))
 
 
-(def drw {:type :compound :subtype :drawing :elems [] :filename "/testfiles/temp.grl"})
-(def e1 {:type :point :visible 1 :p [567 524] :p-ref [567 524] :name "P1"})
-(def e2 {:type :circle :visible 1 :p-center [567 524] :radius 30 :p-ref [567 524]})
-(def e3 {:type :line :visible 1 :p1 [300 250] :p2 [567 524] :p-ref [567 524]})
-(def e4 {:type :line :visible 1 :p1 [125 300] :p2 [570 520] :p-ref [570 520]})
-(def e5 {:type :line :visible 1 :p1 [224  42] :p2 [224  24] :p-ref [224  24]})
+(def e1 (#'shapes/constructPoint [567 524]))
+(def e2 (#'shapes/constructCircle [567 524] 30))
+(def e3 (#'shapes/constructLine [300 250][567 524]))
+(def e4 (#'shapes/constructLine [125 300][570 520]))
+(def e5 (#'shapes/constructLine [224  42][224  24]))
+(def drw (#'shapes/constructCompound [] :subtype :drawing :filename "/testfiles/temp.grl"))
+
+;; intersections:
+;;
+;; e5: no intersection
+;; e1 x e3 : [[567 524]]
+;; e2 x e4 : [[542.648790 506.478054]]
+;; e2 x e3 : [[546.063027 502.514117]]
+;; e3 x e4 : [[556.690141 513.419845]]
+;;
 
 
 (deftest push-drawing-test
@@ -46,7 +57,8 @@
     (is (= e2 (#'elements/push-elem e2)))
     (is (= 3 (#'elements/elements-length)))
     (is (= 3 (#'elements/shapes-count)))
-    (is (= 2 (count (#'elements/list-elems)))))
+    (is (= 2 (count (#'elements/list-elems))))
+    (is (= 1 (count (#'elements/list-points)))))
   (testing "tos and newest-shape"
     (let [drw (:drw-elem (#'elements/tos))]
       (is (and (= :compound (:type drw))(= :drawing (:subtype drw))))
@@ -55,7 +67,17 @@
       (#'elements/clear)
       (is (nil? (#'elements/tos)))))
   (testing "elements-length after clear"
-    (is (= 0 (#'elements/elements-length)))))
+    (is (= 0 (#'elements/elements-length))))
+  (testing "points-list"
+    (#'elements/clear)
+    (#'elements/push-elem drw)
+    (#'elements/push-elem e2)
+    (#'elements/push-elem e3)
+    (#'elements/push-elem e5)
+    (#'elements/push-elem e1)
+    (#'elements/push-elem e4)
+    (let [pts (#'elements/list-points)]
+      (is (not-any? false? (map math/equals? (sort pts)(sort [[125 300][224 24][224 42][300 250][542.648791 506.478054][546.063027 502.514117][556.690141 513.419845][567 524][570 520]])))))))
 
 
 (deftest collect-XXX-test
@@ -67,7 +89,7 @@
   (#'elements/push-elem (assoc e5 :name "E5"))
   (is (= 5 (count (#'elements/collect-shapes (:drw-elem (#'elements/tos))))))
   (is (= 6 (count (#'elements/collect-elements (:drw-elem (#'elements/tos))))))
-  (is (= 4 (count (#'elements/collect-named-elements (:drw-elem (#'elements/tos))))))
+  (is (= 3 (count (#'elements/collect-named-elements (:drw-elem (#'elements/tos))))))
   (is (= e4 (dissoc (#'elements/find-element-by-name "E4") :name)))
   (is (nil? (#'elements/find-element-by-name "E8"))))
 
@@ -127,3 +149,36 @@
     (#'elements/register #'user/update-elements)
     (is (nil? (#'elements/reinit-repl-server e2))))
     )
+
+(def lne1 (#'shapes/constructLine [2 2][12 2]))
+(def lne2 (#'shapes/constructLine [12 2][5 6]))
+(def lne3 (#'shapes/constructLine [5 6][2 2]))
+(def lne4 (#'shapes/constructLine [6 0][8 10]))
+(def lne5 (#'shapes/constructLine [2 6][0 12]))
+(def cle1 (#'shapes/constructCircle [7 5] 4))
+(def arc1 (#'shapes/constructArc [11 0] 4 [11 4][0 7]))
+(def elems [lne4 lne2 lne5 cle1 lne1 arc1 lne3])
+
+
+
+(comment
+(deftest create-points-list-test
+  (testing "create-points-list"
+    (is (= 22 (count (#'elements/create-points-list elems))))
+    (#'elements/clear)[[567 524]]
+[[542.648790 506.478054]]
+[[546.063027 502.514117]]
+[[556.690141 513.419845]]
+    (#'elements/push-elem drw)
+    (is (= 0 (count (#'elements/create-points-list (#'elements/list-elems)))))
+    (#'elements/push-elem e1)
+    (is (= 0 (count (#'elements/create-points-list (#'elements/list-elems)))))
+;;    (#'elements/push-elem e2)
+;;    (is (= 1 (count (#'elements/create-points-list (#'elements/list-elems)))))
+))
+;;    (#'elements/push-elem e3)
+;;    (#'elements/push-elem (assoc e4 :name "E4"))
+;;    (#'elements/push-elem (assoc e5 :name "E5"))
+;;    (is (= 1 (count (#'elements/create-points-list elems))))
+;;    (is (= 5 (count (#'elements/create-points-list (#'elements/list-elems)))))))
+)

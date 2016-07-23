@@ -6,16 +6,16 @@
 
 (deftest helpers-test
   (testing "snap-time-exceeded?"
-    (is (#'gui/snap-time-exceeded? 0))
-    (is (#'gui/snap-time-exceeded? 998))
-    (is (#'gui/snap-time-exceeded? 1000))
-    (is (#'gui/snap-time-exceeded? 1002))
-    (is (#'gui/snap-time-exceeded? 100000))
+    (is (false? (#'gui/snap-time-exceeded? (System/currentTimeMillis))))
+    (is (false? (#'gui/snap-time-exceeded? (- (System/currentTimeMillis) 498))))
+    (is (false? (#'gui/snap-time-exceeded? (- (System/currentTimeMillis) 700))))
+    (is (#'gui/snap-time-exceeded? (- (System/currentTimeMillis) 1002)))
+    (is (#'gui/snap-time-exceeded? (- (System/currentTimeMillis) 100000)))
     )
   (testing "short-trace"
     (is (#'gui/short-trace? 0))
     (is (#'gui/short-trace? 4))
-    (is (not (#'gui/short-trace? 5)))
-    (is (not (#'gui/short-trace? 6)))
-    (is (not (#'gui/short-trace? 10000)))
+    (is (#'gui/short-trace? 15))
+    (is (not (#'gui/short-trace? 21)))
+    (is (not (#'gui/short-trace? 100)))
     ))

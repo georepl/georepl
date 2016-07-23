@@ -111,6 +111,13 @@
           a (/ (dot-product v w)(dot-product w w))]
       (vec-add p2 (vec-scal-mult a w)))))
 
+(defn on-straight-line? [q p1 p2]
+  (let [v (vec-sub p2 p1)
+        w (vec-sub q p1)]
+    (nearly-zero? (det v w))))
+
+(defn on-line? [q p1 p2]
+  (equals? (dist p1 p2) (+ (dist q p1)(dist q p2))))
 
 (defn vec-rotate-center [p angle]
   (let [c (cos angle)
@@ -148,59 +155,126 @@
                             v)
              center-p)))
 
+(defn on-circle? [q cp radius]
+  (equals? (dist cp q) radius))
+
+
+(defn on-arc? [q cp radius p1 p2]
+  (and (on-circle? q cp radius)
+       (right-from? p1 p2 q)))
+
 
 (defn intersect-circles [p-center1 r1 p-center2 r2]
-  (let [[x1 y1] (take 2 p-center1)
-        [x2 y2] (take 2 p-center2)
+  (if (or (equals? p-center1 p-center2)
+          (nearly-zero? r1)
+          (nearly-zero? r2)
+          (> (dist p-center1 p-center2) (+ r1 r2)))
+    []
+    (dedupe
+      (let [[x1 y1] (take 2 p-center1)
+            [x2 y2] (take 2 p-center2)
 
-        a (* 2 (- x2 x1))
-        b (* 2 (- y2 y1))
-        c (- (+ (* x2 x2)(* y2 y2)(* r1 r1))
-             (+ (* x1 x1)(* y1 y1)(* r2 r2)))
+            a (* 2 (- x2 x1))
+            b (* 2 (- y2 y1))
+            c (- (+ (* x2 x2)(* y2 y2)(* r1 r1))
+                 (+ (* x1 x1)(* y1 y1)(* r2 r2)))
 
-        d (- c (+ (* a x1)(* b y1)))
+            d (- c (+ (* a x1)(* b y1)))
 
-        denominator (+ (* a a)(* b b))
-        num-factor (sqrt (- ( *(* r1 r1) denominator)(* d d)))
+            denominator (+ (* a a)(* b b))
+            num-factor (sqrt (- ( *(* r1 r1) denominator)(* d d)))
 
-        px (+ x1 (/ (+ (* a d) (* b num-factor)) denominator))
-        qx (+ x1 (/ (- (* a d) (* b num-factor)) denominator))
+            px (+ x1 (/ (+ (* a d) (* b num-factor)) denominator))
+            qx (+ x1 (/ (- (* a d) (* b num-factor)) denominator))
 
-        py (+ y1 (/ (+ (* b d) (* a num-factor)) denominator))
-        qy (+ y1 (/ (+ (* b d) (* a num-factor)) denominator))]
-    [[px py][qx qy]]))
+            py (+ y1 (/ (- (* b d) (* a num-factor)) denominator))
+            qy (+ y1 (/ (+ (* b d) (* a num-factor)) denominator))]
+        [[px py][qx qy]]))))
 
 
+(defn intersect-circle-arc [p-center radius cp r start end]
+  (filter
+    #(on-arc? % cp r start end)
+    (filter
+      (comp not empty?)
+        (intersect-circles p-center radius cp r))))
 
-(defn intersect-lines [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
+(defn intersect-arcs [cp1 r1 start1 end1 cp2 r2 start2 end2]
+  (filter
+    #(on-arc? % cp1 r1 start1 end1)
+    (intersect-circle-arc cp1 r1 cp2 r2 start2 end2)))
+
+
+(defn intersect-straight-lines [[x1 y1][x2 y2][x3 y3][x4 y4]]
   (let [divisor (- (* (- y4 y3)(- x2 x1))
                    (* (- y2 y1)(- x4 x3)))]
     (if (nearly-zero? divisor)
-      nil
-      [(/ (- (* (- x4 x3)
-                (- (* x2 y1) (* x1 y2)))
-             (* (- x2 x1)
-                (- (* x4 y3) (* x3 y4))))
-          divisor)
+      []
+      [[(/ (- (* (- x4 x3)
+                 (- (* x2 y1) (* x1 y2)))
+              (* (- x2 x1)
+                 (- (* x4 y3) (* x3 y4))))
+           divisor)
 
-       (/ (- (* (- y1 y2)
-                (- (* x4 y3)(* x3 y4)))
-             (* (- y3 y4)
-                (- (* x2 y1) (* x1 y2))))
-          divisor)])))
+        (/ (- (* (- y1 y2)
+                 (- (* x4 y3)(* x3 y4)))
+              (* (- y3 y4)
+                 (- (* x2 y1) (* x1 y2))))
+           divisor)]])))
 
 
-(defn intersect-line-segments [[[x1 y1][x2 y2]][[x3 y3][x4 y4]]]
-  (let [s (intersect-lines [[x1 y1][x2 y2]][[x3 y3][x4 y4]])]
-    (if (nil? s)
-      nil
-      (let [[x y] [(first s)(second s)]]
-        (if (and (< (min x1 x2) x (max x1 x2))
-                 (< (min x3 x4) x (max x3 x4))
-                 (< (min y1 y2) y (max y1 y2))
-                 (< (min y3 y4) y (max y3 y4)))
-           [x y]
-           nil)))))
+(defn intersect-lines [p1 p2 p3 p4]
+  (let [s (intersect-straight-lines p1 p2 p3 p4)]
+    (if (and (not (empty? s))(on-line? (first s) p1 p2)(on-line? (first s) p3 p4))
+      s
+      [])))
+
+
+(defn intersect-straight-line-circle [[x1 y1] [x2 y2] [cpx cpy] radius]
+  (if (nearly-zero? radius)
+    (on-straight-line? [cpx cpy] [x1 y1] [x2 y2])
+    (dedupe
+      (let [a (- y1 y2)
+            b (- x2 x1)]
+        (if (nearly-zero? b)
+          (let [dx (abs (- cpx x1))]
+            (if (> dx radius)
+              []
+              (let [angle (acos (/ dx radius))
+                    dy (* radius (sin angle))]
+                [[x1 (+ cpy dy)]
+                 [x1 (- cpy dy)]])))
+          (let [d (+ (* a (- x1 cpx))(* b (- y1 cpy)))
+                rr (* radius radius)
+                dd (* d d)
+                quot (+ (* a a)(* b b))
+                disc (- (* rr quot) dd)]
+            (if (< disc 0.0)
+              []
+              (let [ad (* a d)
+                    bd (* b d)
+                    rt (sqrt disc)]
+                [[(+ cpx (/ (+ ad (* b rt)) quot))
+                  (+ cpy (/ (- bd (* a rt)) quot))]
+                 [(+ cpx (/ (- ad (* b rt)) quot))
+                  (+ cpy (/ (+ bd (* a rt)) quot))]]))))))))
+
+
+(defn intersect-line-circle [p1 p2 cp radius]
+  (filter
+    #(on-line? % p1 p2)
+    (filter
+      (comp not empty?)
+        (intersect-straight-line-circle p1 p2 cp radius))))
+
+
+(defn intersect-line-arc [p1 p2 cp radius start end]
+  (filter
+    #(on-arc? % cp radius start end)
+    (filter
+      (comp not empty?)
+        (intersect-line-circle p1 p2 cp radius))))
+
 
 (defn circumcircle [a b c]
   "return center and radius of the circumscribed circle of the triangle given as points a, b, c"
@@ -210,10 +284,10 @@
         p2 (vec-add b (vec-scal-mult 0.5 v2))
         q1 (vec-add p1 (vec-ortho v1))
         q2 (vec-add p2 (vec-ortho v2))
-        center (intersect-lines [p1 q1][p2 q2])]
-    (if (nil? center)
+        center (intersect-straight-lines p1 q1 p2 q2)]
+    (if (empty? center)
       nil
-      [center (dist b center)])))
+      [(first center) (dist b (first center))])))
 
 
 ;; get the minimal box containng all points of a given list
