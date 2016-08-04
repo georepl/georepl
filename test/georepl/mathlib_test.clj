@@ -2,6 +2,9 @@
   (:require [clojure.test :refer :all]
             [georepl.mathlib :refer :all]))
 
+(deftest coordinates-test
+  (is (equals? [42 43](coordinates [42 43 323253252 :left]))))
+
 (deftest nearly-zero-test
   (testing "nearly-zero?"
     (is (true? (nearly-zero? 0)))
@@ -216,7 +219,8 @@
 (deftest on-arc?-test
   (testing "on-arc?-test"
     (is (on-arc? [20.0 10.0][20.0 20.0] 10.0 [10.0 20.0][30.0 20.0]))
-    (is (not (on-arc? [20.0 10.0][20.0 20.0] 10.0 [30.0 20.0][10.0 20.0])))
+    (is (false? (on-arc? [20.0 10.0][20.0 20.0] 10.0 [10.0 20.0][31.0 21.0])))
+    (is (false? (on-arc? [20.0 10.0][20.0 20.0] 10.0 [30.0 20.0][10.0 20.0])))
     ))
 
 (deftest intersect-circles-test
@@ -322,13 +326,13 @@
 
 (deftest intersect-line-arc-test
   (testing "two common points on line and arc"
-    (is (= 2 (count (intersect-line-arc [0 0][4 2][3 2] 1 [2 2][3 300]))))
+    (is (= 2 (count (intersect-line-arc [0 0][4 2][3 2] 1 [2 2][3 3]))))
     )
   (testing "two common points on full circle but only one on arc"
     (is (= 1 (count (intersect-line-arc [0 0][4 2][3 2] 1 [3 1][3 3]))))
     )
   (testing "two common points on full circle but none on arc"
-    (is (= 0 (count (intersect-line-arc [0 0][4 2][3 2] 1 [4 2][2 2]))))
+    (is (= 0 (count (intersect-line-arc [0 0][4 2][3 2] 1 [3 3][2 2]))))
     )
   )
 

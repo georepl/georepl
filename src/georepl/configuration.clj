@@ -9,4 +9,4 @@
     :repl-server-port 7888
     :short-range 20
     :snap-duration 1000
-    :dash-speed 0.9})
+    :dash-speed 0.3})

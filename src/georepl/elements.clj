@@ -13,6 +13,7 @@
 ;; The elements map contains a list of currently displayed shapes for performance reasons.
 (def elements (atom {:stack [] :upd-f nil}))
 
+
 (defn- out[]
   (prn elements))
 
@@ -104,6 +105,10 @@
       (push-drawing (assoc drw :elems elems) e))))
 
 
+(defn push-elems [elems]
+  (push-drawing (assoc (:drw-elem (tos)) :elems elems) nil))
+
+
 (defn pop-elem []
   (if (= 1 elements-length)
     nil
@@ -118,6 +123,48 @@
 
 (defn list-points []
   (:points-list (tos)))
+
+
+;;
+;; unique names for elements
+(defn- cut-name-str[prefix s]
+  (if (s/starts-with? s prefix)
+    (apply str (drop (count prefix) s))
+    nil))
+
+
+(defn- next-unused-index [idx-coll]
+  (if (nil? idx-coll)
+    1
+    (inc (Integer/parseInt idx-coll))))
+
+
+(defn- unique-name [prefix names-list]
+  (let [name (->> names-list
+                  (sort)
+                 (map (partial cut-name-str prefix))
+                 (filter #(not (nil? %)))
+                 (sort #(compare (count %1)(count %2)))
+                 (last)
+                 (next-unused-index)
+                 (format "%s%d" prefix))]
+    [name (cons name names-list)]))
+
+
+;; multiple push and pop operations in one transition
+(defn update-elements
+  ([todos] (update-elements todos (collect-shapes (:drw-elem (tos))) (map #(:name %) (list-elems))))
+  ([todos elems names-list]
+    (if (empty? todos)
+      (if (empty? elems)
+        nil
+        (push-elems elems))
+      (let [cmd (first todos)
+            elem (second todos)]
+        (case cmd
+          :create (let [[name names] (unique-name (shapes/name-prefix elem) names-list)]
+                    (update-elements (nthrest todos 2)(cons (assoc elem :name name) elems) names))
+          :delete (update-elements (nthrest todos 2)(filter (partial not= elem) elems) names-list))))))
 
 
 (defn spit-drawing []
@@ -140,26 +187,3 @@
     (let [drw (read-string (slurp name))
           s (pr-str drw)]
       (push-elem (f drw)))))
-
-
-(defn- cut-name-str[prefix s]
-  (if (s/starts-with? s prefix)
-    (apply str (drop (count prefix) s))
-    nil))
-
-
-(defn- next-unused-index [idx-coll]
-  (if (nil? idx-coll)
-    1
-    (inc (Integer/parseInt idx-coll))))
-
-
-(defn unique-name [prefix]
-  (->> (list-elems)
-       (map :name)
-       (map (partial cut-name-str prefix))
-       (filter #(not (nil? %)))
-       (sort #(compare (count %1)(count %2)))
-       (last)
-       (next-unused-index)
-       (format "%s%d" prefix)))

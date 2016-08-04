@@ -2,7 +2,6 @@
   (:require [georepl.mathlib :as math]))
 
 
-
 (defprotocol IShape
   (construct [this])
   (next-point [this p])
@@ -12,8 +11,27 @@
   (scale[this factor])
   (scale-ref[this p factor])
   (intersect [this shape])
+  (between? [this q p1 p2])
   (points [this])
+  (name-prefix [this])
+  (sort-points [this pnt-list])
+  (cut [this [p q]])
   (form [this]))
+
+
+
+;;
+;; functions for all shapes
+;;
+(declare constructPoint constructLine constructCircle constructArc)
+
+(defn on-element [p elem]
+  (case (:type elem)
+    :point  (if (math/equals? p (:p elem)) p nil)
+    :line   (if (math/on-line? p (:p1 elem)(:p2 elem)) p nil)
+    :circle (if (math/on-circle? p (:p-center elem)(:radius elem)) p nil)
+    :arc    (if (math/on-arc? p (:p-center elem)(:radius elem)(:p-start elem)(:p-end elem)) p nil)
+            nil))
 
 
 ;; 'point' basic shape
@@ -57,8 +75,23 @@
       :arc    (if (math/on-arc? (:p this)(:p-center shape)(:radius shape)(:p-start shape)(:p-end shape)) [(:p this)] [])
               []))
 
+  (between? [this q p1 p2]
+    (and (math/equals? p1 p2)
+         (math/equals? q p2)
+         (math/equals? q (:p this))))
+
   (points [this]
     [(:p this)])
+
+  (name-prefix [this]
+    "Pnt")
+
+  (sort-points [this pnt-list]
+    (dedupe
+      (filter (partial math/equals? (:p this)) pnt-list)))
+
+  (cut [this [p q]]
+    [])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -115,8 +148,30 @@
       :arc    (math/intersect-line-arc (:p1 this) (:p2 this) (:p-center shape)(:radius shape)(:p-start shape)(:p-end shape))
               []))
 
+  (between? [this q p1 p2]
+    (math/on-line? q p1 p2))
+
   (points [this]
     [(:p1 this)(:p2 this)])
+
+  (name-prefix [this]
+    "Ln")
+
+  (sort-points [this pnt-list]
+    (->> pnt-list
+         (filter #(math/on-line? % (:p1 this)(:p2 this)))
+         (dedupe)
+         (sort-by (partial math/dist (:p1 this)))))
+
+  (cut [this [p q]]
+    (if (math/equals? (:p1 this) p)
+      (if (math/equals? (:p2 this) q)
+        [ :delete this ]
+        [ :delete this :create (assoc this :p1 q :p-ref q :name (:name this)) ])
+      (if (math/equals? (:p2 this) q)
+        [ :delete this :create (assoc this :p2 p :name (:name this)) ]
+        [ :delete this :create (assoc this :p2 p :name (:name this))
+          :create (constructLine q (:p2 this))])))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -148,6 +203,7 @@
         [this (:p-center this) l1]
         [this q l2])))
 
+
   (translate [this v]
     (let [q (math/vec-add p-center v)]
       (assoc this :p-center q
@@ -178,8 +234,29 @@
             []))
 
 
+  (between? [this q p1 p2]
+    (math/on-arc? q (:p-center this)(:radius this) p1 p2))
+
   (points [this]
     [])
+
+
+  (name-prefix [this]
+    "Cir")
+
+  (sort-points [this pnt-list]
+    (->> pnt-list
+         (filter #(math/on-circle? % (:p-center this)(:radius this)))
+         (dedupe)
+;         (sort-by #(math/right-from? (first pnt-list)) (:p-center this) %)))
+         (sort #((comparator (fn[p q](math/right-from? (first pnt-list) q p))) %1 %2))))
+
+  (cut [this points]
+;(prn "CUT:" (:p-center this)(:radius this) "POINTS:" points)
+    (if (< (count points) 2)
+      [ :delete this]
+      [ :delete this
+        :create (constructArc (:p-center this)(:radius this)(second points)(first points))]))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -256,8 +333,34 @@
             []))
 
 
+  (between? [this q p1 p2]
+    (and
+      (math/on-arc? q (:p-center this)(:radius this) p1 p2)
+      (math/on-arc? p1 (:p-center this)(:radius this)(:p-start this)(:p-end this))
+      (math/on-arc? p2 (:p-center this)(:radius this)(:p-start this)(:p-end this))))
+
   (points [this]
     [(:p-start this)(:p-end this)])
+
+  (name-prefix [this]
+    "Arc")
+
+  (sort-points [this pnt-list]
+    (->> pnt-list
+         (filter #(math/on-arc? % (:p-center this)(:radius this)(:p-start this)(:p-end this)))
+         (dedupe)
+         (sort #((comparator (fn[p q](math/right-from? (:p-center this) q p))) %1 %2))))
+
+  (cut [this [p q]]
+    (if (math/equals? (:p-start this) p)
+      (if (math/equals? (:p-end this) q)
+        [ :delete this ]
+        [ :delete this
+          :create (assoc this :p-start q :p-ref q :name (:name this))])
+      (if (math/equals? (:p-end this) q)
+        [ :delete this :create (assoc this :p-end p :name (:name this))]
+        [ :delete this :create (assoc this :p-end p)
+          :create (constructArc (:p-center this)(:radius this) q (:p-end this))])))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -315,8 +418,24 @@
 ;;NYI: ToBeDone
     [])
 
+
+  (between? [this q p1 p2]
+;;NYI: ToBeDone
+    false)
+
   (points [this]
     (:p-list this))
+
+  (name-prefix [this]
+    "Con")
+
+  (sort-points [this pnt-list]
+;;NYI: ToBeDone
+    [])
+
+  (cut [this [p q]]
+;;NYI: ToBeDone
+    [])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -390,10 +509,24 @@
         (dedupe (sort cl3)))))
 
 
+  (between? [this q p1 p2]
+;;NYI: ToBeDone
+    false)
+
   (points [this]
     (dedupe
       (sort
         (map vec (apply concat (map points (:elems this)))))))
+
+  (name-prefix [this]
+    nil)
+
+  (sort-points [this pnt-list]
+    [])
+
+  (cut [this [p q]]
+;;NYI: ToBeDone ???
+    [])
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -449,7 +582,20 @@
   (intersect [this shape]
     [])
 
+  (between? [this q p1 p2]
+    false)
+
   (points [this]
+    [])
+
+
+  (name-prefix [this]
+    nil)
+
+  (sort-points [this pnt-list]
+    [])
+
+  (cut [this [p q]]
     [])
 
   (form [this]

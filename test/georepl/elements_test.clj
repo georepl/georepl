@@ -11,6 +11,9 @@
 (def e3 (#'shapes/constructLine [300 250][567 524]))
 (def e4 (#'shapes/constructLine [125 300][570 520]))
 (def e5 (#'shapes/constructLine [224  42][224  24]))
+(def e6 (#'shapes/constructArc [100 100] 50 [150 100][100 150]))
+(def e7 (#'shapes/constructCompound [e1 e2 e3 e4 e5 e6]))
+
 (def drw (#'shapes/constructCompound [] :subtype :drawing :filename "/testfiles/temp.grl"))
 
 ;; intersections:
@@ -23,6 +26,35 @@
 ;;
 
 
+
+(deftest unique-name-test
+  (#'elements/push-elem drw)
+  (#'elements/push-elem (assoc e1 :name (#'elements/unique-name "Pnt" [])))
+  (#'elements/push-elem (assoc e2 :name (#'elements/unique-name "Cir" ["Pnt1"])))
+  (#'elements/push-elem (assoc e3 :name (#'elements/unique-name "Ln" ["Pnt1" "Cir1"])))
+  (#'elements/push-elem (assoc e4 :name (#'elements/unique-name "Ln" ["Pnt1" "Cir1" "Ln1"])))
+  (#'elements/push-elem (assoc e5 :name (#'elements/unique-name "Ln" ["Pnt1" "Cir1" "Ln1" "Ln2"])))
+  (#'elements/push-elem (assoc e5 :name (#'elements/unique-name "Con" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3"])))
+  (#'elements/push-elem (assoc e5 :name (#'elements/unique-name "Con" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3" "Con1"])))
+  (is (= "Ln4"  (first (#'elements/unique-name "Ln" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3" "Con1" "Con2"]))))
+  (is (= "Con3" (first (#'elements/unique-name "Con" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3" "Con1" "Con2"]))))
+  (is (= "Pnt2" (first (#'elements/unique-name "Pnt" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3" "Con1" "Con2"]))))
+  (is (= "Cir2" (first (#'elements/unique-name "Cir" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3" "Con1" "Con2"]))))
+  (is (= "Arc1" (first (#'elements/unique-name "Arc" ["Pnt1" "Cir1" "Ln1" "Ln2" "Ln3" "Con1" "Con2"]))))
+
+  (#'elements/push-elem (assoc e1 :name "Pnt99"))
+  (#'elements/push-elem (assoc e6 :name "Arc42"))
+  (#'elements/push-elem (assoc e2 :name "Cir22"))
+  (#'elements/push-elem (assoc e7 :name "Con12"))
+  (#'elements/push-elem (assoc e5 :name "Ln11"))
+
+
+  (is (= "Ln12"   (first (#'elements/unique-name "Ln" ["Pnt99" "Arc42" "Cir22" "Con12" "Ln11"]))))
+  (is (= "Con13"  (first (#'elements/unique-name "Con" ["Pnt99" "Arc42" "Cir22" "Con12" "Ln11" "Ln12"]))))
+  (is (= "Pnt100" (first (#'elements/unique-name "Pnt" ["Pnt99" "Arc42" "Cir22" "Con12" "Ln11" "ln12" "Con13"]))))
+  (is (= "Cir23"  (first (#'elements/unique-name "Cir" ["Pnt99" "Arc42" "Cir22" "Con12" "Ln11" "ln12" "Con13" "Pnt100"]))))
+  (is (= "Arc43"  (first (#'elements/unique-name "Arc" ["Pnt99" "Arc42" "Cir22" "Con12" "Ln11" "ln12" "Con13" "Pnt100" "Citr23"])))))
+
 (deftest push-drawing-test
   (testing "push-drawing"
     (is (= (#'elements/push-drawing drw nil) (:drw-elem (#'elements/tos))))
@@ -30,7 +62,7 @@
     ))
 
 
-(deftest push-and-pop
+(deftest push-and-pop-test
   (#'elements/clear)
   (#'elements/push-elem drw)
   (#'elements/push-elem e1)
@@ -39,8 +71,19 @@
   (is (= 4 (#'elements/elements-length)))
   (is (= e3 (dissoc (#'elements/newest-shape) :name)))
   (#'elements/pop-elem)
-  (is (nil? (#'elements/find-element-by-name "E42"))))
+  (is (nil? (#'elements/find-element-by-name "E42")))
+  (#'elements/clear)
+  (#'elements/push-elem drw)
+  (#'elements/push-elem e2)
+  (is (= [e2] (elements/list-elems))))
 
+(deftest push-elems-test
+  (#'elements/clear)
+  (#'elements/push-elem drw)
+  (#'elements/push-elems [e1 e4 e5])
+  (is (= 3 (count (#'elements/collect-shapes (:drw-elem (#'elements/tos))))))
+  (#'elements/push-elems [e2 e3])
+  (is (= 2 (count (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))))
 
 (deftest stack-operations-test
   (testing "elements-length"
@@ -94,32 +137,6 @@
   (is (nil? (#'elements/find-element-by-name "E8"))))
 
 
-(deftest unique-name-test
-  (elements/push-elem drw)
-  (elements/push-elem (assoc e1 :name (elements/unique-name "Pnt")))
-  (elements/push-elem (assoc e2 :name (elements/unique-name "Cir")))
-  (elements/push-elem (assoc e3 :name (elements/unique-name "Ln")))
-  (elements/push-elem (assoc e4 :name (elements/unique-name "Ln")))
-  (elements/push-elem (assoc e5 :name (elements/unique-name "Ln")))
-  (elements/push-elem (assoc e5 :name (elements/unique-name "Con")))
-  (elements/push-elem (assoc e5 :name (elements/unique-name "Con")))
-  (is (= "Ln4" (elements/unique-name "Ln")))
-  (is (= "Con3" (elements/unique-name "Con")))
-  (is (= "Pnt2" (elements/unique-name "Pnt")))
-  (is (= "Cir2" (elements/unique-name "Cir")))
-  (is (= "Arc1" (elements/unique-name "Arc")))
-  (elements/push-elem (assoc e1 :name "Pnt99"))
-  (elements/push-elem (assoc e1 :name "Arc42"))
-  (elements/push-elem (assoc e1 :name "Cir22"))
-  (elements/push-elem (assoc e1 :name "Con12"))
-  (elements/push-elem (assoc e1 :name "Ln11"))
-  (is (= "Ln12" (elements/unique-name "Ln")))
-  (is (= "Con13" (elements/unique-name "Con")))
-  (is (= "Pnt100" (elements/unique-name "Pnt")))
-  (is (= "Cir23" (elements/unique-name "Cir")))
-  (is (= "Arc43" (elements/unique-name "Arc"))))
-
-
 
 (deftest persistance-test
   (testing "create an empty drawing"
@@ -150,6 +167,20 @@
     (is (nil? (#'elements/reinit-repl-server e2))))
     )
 
+;;(def pnt1 (assoc (#'shapes/constructPoint [2 2]) :name "Pnt1"))
+;;(def pnt2 (assoc (#'shapes/constructPoint [12 2]) :name "Pnt2"))
+;;(def pnt3 (assoc (#'shapes/constructPoint [5 6]) :name "Pnt3"))
+;;(def lne1 (assoc (#'shapes/constructLine [2 2][12 2]) :name "Lne1"))
+;;(def lne2 (assoc (#'shapes/constructLine [12 2][5 6]) :name "Lne2"))
+;;(def lne3 (assoc (#'shapes/constructLine [5 6][2 2]) :name "Lne3"))
+;;(def lne4 (assoc (#'shapes/constructLine [6 0][8 10]) :name "Lne4"))
+;;(def lne5 (assoc (#'shapes/constructLine [2 6][0 12]) :name "Lne5"))
+;;(def cle1 (assoc (#'shapes/constructCircle [7 5] 4) :name "Cle1"))
+;;(def arc1 (assoc (#'shapes/constructArc [11 0] 4 [11 4][0 7]) :name "Arc1"))
+
+(def pnt1 (#'shapes/constructPoint [2 2]))
+(def pnt2 (#'shapes/constructPoint [12 2]))
+(def pnt3 (#'shapes/constructPoint [5 6]))
 (def lne1 (#'shapes/constructLine [2 2][12 2]))
 (def lne2 (#'shapes/constructLine [12 2][5 6]))
 (def lne3 (#'shapes/constructLine [5 6][2 2]))
@@ -157,28 +188,29 @@
 (def lne5 (#'shapes/constructLine [2 6][0 12]))
 (def cle1 (#'shapes/constructCircle [7 5] 4))
 (def arc1 (#'shapes/constructArc [11 0] 4 [11 4][0 7]))
-(def elems [lne4 lne2 lne5 cle1 lne1 arc1 lne3])
 
 
-
-(comment
-(deftest create-points-list-test
-  (testing "create-points-list"
-    (is (= 22 (count (#'elements/create-points-list elems))))
-    (#'elements/clear)[[567 524]]
-[[542.648790 506.478054]]
-[[546.063027 502.514117]]
-[[556.690141 513.419845]]
-    (#'elements/push-elem drw)
-    (is (= 0 (count (#'elements/create-points-list (#'elements/list-elems)))))
-    (#'elements/push-elem e1)
-    (is (= 0 (count (#'elements/create-points-list (#'elements/list-elems)))))
-;;    (#'elements/push-elem e2)
-;;    (is (= 1 (count (#'elements/create-points-list (#'elements/list-elems)))))
-))
-;;    (#'elements/push-elem e3)
-;;    (#'elements/push-elem (assoc e4 :name "E4"))
-;;    (#'elements/push-elem (assoc e5 :name "E5"))
-;;    (is (= 1 (count (#'elements/create-points-list elems))))
-;;    (is (= 5 (count (#'elements/create-points-list (#'elements/list-elems)))))))
-)
+(deftest update-elements-test
+  (#'elements/clear)
+  (#'elements/push-drawing drw nil)
+  (is (empty? (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))
+  (#'elements/update-elements [:create lne1 :create lne2 :create lne3])
+  (is (= [(assoc lne3 :name "Ln3")(assoc lne2 :name "Ln2")(assoc lne1 :name "Ln1")]
+         (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))
+  (#'elements/update-elements [:create arc1 :delete (assoc lne2 :name "Ln2")])
+  (is (= [(assoc arc1 :name "Arc1")(assoc lne3 :name "Ln3")(assoc lne1 :name "Ln1")]
+         (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))
+  (#'elements/update-elements [:delete (assoc lne1 :name "Ln1") :create cle1 :create lne2])
+  (is (= [(assoc lne2 :name "Ln4")(assoc cle1 :name "Cir1")(assoc arc1 :name "Arc1")(assoc lne3 :name "Ln3")]
+         (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))
+  (#'elements/update-elements [:delete (assoc lne2 :name "Ln4")])
+  (is (= [(assoc cle1 :name "Cir1")(assoc arc1 :name "Arc1")(assoc lne3 :name "Ln3")]
+         (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))
+  (#'elements/update-elements [:create lne1])
+  (is (= [(assoc lne1 :name "Ln4")(assoc cle1 :name "Cir1")(assoc arc1 :name "Arc1")(assoc lne3 :name "Ln3")]
+         (#'elements/collect-shapes (:drw-elem (#'elements/tos)))))
+  (#'elements/update-elements [:delete (assoc lne1 :name "Ln4")
+                               :delete (assoc arc1 :name "Arc1")
+                               :delete (assoc cle1 :name "Cir1")
+                               :delete (assoc lne2 :name "Ln2")])
+  (is (= [(assoc lne3 :name "Ln3")] (#'elements/collect-shapes (:drw-elem (#'elements/tos))))))

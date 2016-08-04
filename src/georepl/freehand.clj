@@ -11,14 +11,11 @@
 (defn timestamp [p]
   (last p))
 
-(defn- coordinates [p]
-  [(first p)(second p)])
-
 (defn- dash-velocity [trace t1 t2]
   (if (< (count trace) 2)
     0.0
     (let [v (math/vec-sub (last trace)(first trace))]
-      (/ (math/length (coordinates v))
+      (/ (math/length (math/coordinates v))
          (max 1 (math/abs (- t1 t2)))))))
 
 
@@ -106,9 +103,9 @@
   (case (count elm-list)
     0    nil
     1    nil
-    2    (shapes/constructLine (coordinates (first elm-list))(coordinates (first elm-list)))
+    2    (shapes/constructLine (math/coordinates (first elm-list))(math/coordinates (first elm-list)))
          (let [ret (analyze-curved-shapes
-                    (dedupe (map coordinates (distribute-points elm-list)))
+                    (dedupe (map math/coordinates (distribute-points elm-list)))
                     (timestamp (first elm-list))
                     (timestamp (last elm-list)))]
            (if (nil? ret)

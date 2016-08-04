@@ -8,9 +8,10 @@
 
 ;;
 ;; NYI: weird bug: There is a state attribute :context-menu which is only there to work around a bug which may
-;; be in the quil framework. :context-menu should always have the same value as :selection. Both values are set
-;; in the record constructors in gui.clj. The value of :selection was changed in the constructor: The next
-;; time the status shows it comes with the former value of :selection in the update-frame function (or whatever is called after the constructor).
+;; be in the quil framework or it's just another nasty synchronization problem. :context-menu should always have the
+;; same value as :selection. Both values are set in the record constructors in gui.clj.
+;; The value of :selection was changed in the constructor: The next time the status shows it comes with the former value
+;; of :selection in the update-frame function (or whatever is called after the constructor).
 ;; Other attributes in the record keep their constructor-set values, however. Simply renaming :selection does not help.
 ;; So, as a workaround, :context-menu is initialized with the same value as :selection in the constructor and :selection is reset
 ;; with the value of :context-menu in reinit-state.
@@ -19,10 +20,6 @@
 ;;
 ;; helpers
 ;;
-(defn- coordinates [coll]
-  (vec (take 2 coll)))
-
-
 (defn- trace-length [trace]
   (let [coll  (map (partial take 2) trace)]
     (reduce + (map math/dist (rest coll) coll))))
@@ -116,12 +113,13 @@
     (assoc new-state :redo-stack (:redo-stack this)
                      :selection (:context-menu this)
                      :show-context? (:show-context? this)
+;;                     :show-trace? (:show-trace? this)
                      :button-released (:button-released this)
                      :mouse-moved? mouse-moved?)))
 
 (defn picked [this]
-;(prn "picked" (first (:trace this))(:mouse-moved? this))
-  (let [p (coordinates (first (:trace this)))
+;(prn "picked" (System/currentTimeMillis))
+  (let [p (math/coordinates (first (:trace this)))
         state (gui/picked this p)]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
@@ -131,27 +129,27 @@
 
 
 (defn dashed [this]
-;(prn "dashed" (last (:trace this))(first (:trace this))(:mouse-moved? this))
+;(prn "dashed" (System/currentTimeMillis))
   (let [state (gui/dashed this (:trace this))]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 (defn snapped [this]
 ;(prn "snapped" (first (:trace this))(:mouse-moved? this))
-  (let [state (gui/snapped this (coordinates (first (:trace this))))]
+  (let [state (gui/snapped this (math/coordinates (first (:trace this))))]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 (defn dragging [this]
-;(prn "dragging, TraceLen:" (count (:trace this)))
+;(prn "dragging, TraceLen:" (System/currentTimeMillis))
   (gui/dragging this))
 
 (defn dragged [this elem]
-;(prn "dragged" (last (:trace this))(first (:trace this))(:mouse-moved? this))
+;(prn "dragged" (System/currentTimeMillis))
   (let [state (gui/dragged this (:trace this) elem)]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 (defn moved [this]
-;(prn "moved" (take 2 (:trace this)))
-  (let [state (gui/moved this (coordinates (first (:trace this))))]
+;(prn "moved" (System/currentTimeMillis))
+  (let [state (gui/moved this (math/coordinates (first (:trace this))))]
     (reinit-state this (assoc state :trace (:trace this)))))
 
 (defn _idle [this x]
@@ -165,13 +163,8 @@
   this)
 
 (defn idle [this x]
+ ; (prn "Mark " x (System/currentTimeMillis))
   this)
-;(if (not= x (:test-oldx this))
-;  (do
-;    (prn "idle" x (:button-released this))
-;    (assoc this :test-oldx x))
-;;  (_idle this x))
-;  this))
 
 (defn update-frame [this]
 ;(when (and (= (count (:selection this)) 5)
@@ -203,10 +196,6 @@
           (moved (assoc this :mouse-moved? false))
           (idle (assoc this :mouse-moved? false) 4))))))
 
-
-(defn _draw [this]
-  (let [state (gui/draw this)]
-    (reinit-state this state)))
 
 (defn draw [this]
   (gui/draw this))

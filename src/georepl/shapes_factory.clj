@@ -58,8 +58,7 @@
 
 
   (finish [this]
-    (elements/push-elem
-      (assoc elem :name (elements/unique-name "Pnt")))
+    (elements/update-elements [:create (current-element this)])
     [:point (current-element this)]))
 
 
@@ -105,8 +104,7 @@
 
 
   (finish [this]
-    (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "Ln")))
+    (elements/update-elements [:create (current-element this)])
     [:line (current-element this)]))
 
 
@@ -186,8 +184,7 @@
 
 
   (finish [this]
-    (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "Cir")))
+    (elements/update-elements [:create (current-element this)])
     [:circle (current-element this)]))
 
 
@@ -276,8 +273,7 @@
 
 
   (finish [this]
-    (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "Arc")))
+    (elements/update-elements [:create (current-element this)])
     [:arc (current-element this)]))
 
 
@@ -315,8 +311,7 @@
 
 
   (finish [this]
-    (elements/push-elem
-      (assoc (current-element this) :name (elements/unique-name "Con")))
+    (elements/update-elements [:create (current-element this)])
     [:contour (current-element this)]))
 
 

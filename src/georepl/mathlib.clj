@@ -17,6 +17,10 @@
 (defn sin[x] (Math/sin x))
 (defn sgn[x] (if (>= x 0.0) 1 -1))
 
+
+(defn coordinates [p]
+  [(first p)(second p)])
+
 (defn nearly-zero?
   ([x epsilon]
     (let [eps (abs epsilon)]
@@ -161,7 +165,9 @@
 
 (defn on-arc? [q cp radius p1 p2]
   (and (on-circle? q cp radius)
-       (right-from? p1 p2 q)))
+       (on-circle? p1 cp radius)
+       (on-circle? p2 cp radius)
+       (or (right-from? p1 p2 q)(equals? p1 q)(equals? p2 q))))
 
 
 (defn intersect-circles [p-center1 r1 p-center2 r2]

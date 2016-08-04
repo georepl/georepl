@@ -201,9 +201,9 @@
 
 
 
-(deftest timestamp-and-coordinates-test
+(deftest timestamp-test
   (testing "timestamp and coordinates"
-    (is (= (map #(list %1 (second %2)(first %2)) (map freehand/timestamp line1)(map #'freehand/coordinates line1))
+    (is (= (map #(list %1 (second %2)(first %2)) (map freehand/timestamp line1)(map #'math/coordinates line1))
            (map reverse line1)))))
 
 
@@ -266,7 +266,7 @@
 
 (deftest analyze-straight-line-test
   (testing "analyze-straight-line"
-    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 10 100))))
+    (is (= :line (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 10 1000))))
     (is (= :line (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 10 20000))))
     (is (= :dashed (:type (#'freehand/analyze-straight-line [[300 10][4200 -10]] 2 10))))
     (is (= :dashed (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 2 10))))))
@@ -277,7 +277,7 @@
         a3 [[5 4][3 6][3 7][1 7][0 8][-1 8][-2 7][-3 6][-3 5][-4 4][-5 3]]
         a4 [[5 4][3 7][0 8][-1 8][-2 7][-5 3]]]
     (testing "analyze-curved-shapes"
-      (is (= :line (:type (#'freehand/analyze-curved-shapes (map butlast line1) 0 100))))
+      (is (= :line (:type (#'freehand/analyze-curved-shapes (map butlast line1) 0 900))))
 ;; these tests should do. The fact that they don't shows a weakness of the algorithm at smaller scales.
 ;; We need to think about a better way to identify arcs and circles (issue #10)
 ;;      (is (= :arc (:type (#'freehand/analyze-curved-shapes a1 0 100))))

@@ -1,6 +1,7 @@
 (ns georepl.shapes-test
   (:require [clojure.test :refer :all]
             [georepl.mathlib :as math]
+            [georepl.elements :as elements]
             [georepl.shapes :refer :all]))
 
 
@@ -19,12 +20,11 @@
 
 (def Arc1 (constructArc [5.0 8.0] 2.0 [7.0 8.0][5.0 6.0]))
 
-(def e1 (constructPoint [567 524]))
-(def e2 (constructCircle [567 524] 30))
-(def e3 (constructLine [300 250][567 524]))
-(def e4 (constructLine [125 300][570 520]))
-(def e5 (constructLine [224  42][224  24]))
-
+(def e1 (assoc (constructPoint [567 524]) :name "Pnt1"))
+(def e2 (assoc (constructCircle [567 524] 30) :name "Cir1"))
+(def e3 (assoc (constructLine [300 250][567 524]) :name "Ln1"))
+(def e4 (assoc (constructLine [125 300][570 520]) :name "Ln2"))
+(def e5 (assoc (constructLine [224  42][224  24]) :name "Ln3"))
 
 ;; intersections:
 ;;
@@ -41,6 +41,9 @@
 ;; e2 x e4 : [[542.648790 506.478054]]
 ;; e2 x e3 : [[546.063027 502.514117]]
 ;; e3 x e4 : [[556.690141 513.419845]]
+
+
+(def drw (constructCompound [] :subtype :drawing :filename "/testfiles/temp.grl"))
 
 (deftest point-test
   (let [e1 (constructPoint [100 100])]
@@ -105,8 +108,29 @@
         (is (not-any? false? (map math/equals? pts [[-1 -1]]))))
       )
 
+    (testing "between?"
+      (is (between? e1 [100 100][100 100][100 100]))
+      (is (false? (between? e1 [100 100][100 100][90 100])))
+      (is (false? (between? e1 [90 100][100 100][90 100])))
+      )
+
     (testing "points"
       (is (not-any? false? (map math/equals? (sort (points e1))(sort [[100 100]])))))
+
+    (testing "name-prefix"
+      (is (= "Pnt" (name-prefix e1))))
+
+    (testing "sort-points"
+      (is (= [[100 100]] (sort-points e1 [[100 100]])))
+      (is (= [[100 100]] (sort-points e1 [[100 100][100 100]])))
+      (is (= [[100 100]] (sort-points e1 [[100 100][47 11][47 12]])))
+      (is (empty? (sort-points e1 [[10 100][47 11][47 12]]))))
+
+    (testing "name-prefix"
+      (is (= "Pnt" (name-prefix e1))))
+
+    (testing "cut"
+      (is (empty? (cut e1 [[0 0][42 42]]))))
 
 ;;    (testing "form"
 ;;      (let [e2 (constructPoint [42 43])
@@ -188,8 +212,37 @@
         (is (not-any? false? (map math/equals? pts3 (sort []))))
     ))
 
+    (testing "between?"
+      (is (between? e1 [100 100][100 100][200 100]))
+      (is (between? e1 [200 100][100 100][200 100]))
+      (is (between? e1 [150 100][120 100][180 100]))
+      (is (between? e1 [100 100][100 100][90 100]))
+      (is (false? (between? e1 [90 100][100 100][200 100])))
+      (is (false? (between? e1 [110 100][120 100][180 100])))
+      (is (false? (between? e1 [190 100][120 100][180 100]))))
+
     (testing "points"
       (is (not-any? false? (map math/equals? (sort (points e1))(sort [[100 100][200 100]])))))
+
+    (testing "sort-points"
+      (is (= [[100 100]] (sort-points e1 [[100 100]])))
+      (is (= [[100 100][200 100]] (sort-points e1 [[200 100][100 100]])))
+      (is (= [[100 100][120 100][130 100][200 100]] (sort-points e1 [[130 100][200 100][120 100][100 100]])))
+      (is (= [[100 100][120 100][130 100][200 100]] (sort-points e1 [[130 100][200 100][47 11][47 12][120 100][100 100]])))
+      (is (= [[110 100][120 100][130 100]] (sort-points e1 [[130 100][47 11][47 12][120 100][110 100]])))
+      (is (empty? (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]]))))
+
+    (testing "name-prefix"
+      (is (= "Ln" (name-prefix e1))))
+
+    (testing "cut"
+      (let [e2 (assoc (constructLine [-4 5][3 -2]) :name "Ln3")]
+        (is (= [ :delete e2 ] (cut e2 [[-4 5][3 -2]])))
+        (is (= [ :delete e2 :create (assoc e2 :p1 [-1 2] :p-ref [-1 2]) ] (cut e2 [[-4 5][-1 2]])))
+        (is (= [ :delete e2 :create (assoc e2 :p2 [-1 2]) ] (cut e2 [[-1 2][3 -2]])))
+        (is (= [ :delete e2 :create (assoc e2 :p2 [-1 2])
+                 :create (constructLine [0 1] [3 -2])] (cut e2 [[-1 2][0 1]])))
+        ))
 
 ;;    (testing "form"
 ;;      ())
@@ -266,9 +319,45 @@
         (is (empty? pts2))
     ))
 
+    (testing "between?"
+      (is (between? e1 [300 200][200 100][200 300]))
+      (is (between? e1 [200 300][300 200][100 200]))
+      (is (false? (between? e1 [310 200][200 100][200 300])))
+      (is (false? (between? e1 [200 300][310 200][100 200])))
+      (is (false? (between? e1 [200 300][300 200][110 200])))
+      (is (false? (between? e1 [200 100][300 200][200 300]))))
+
     (testing "points"
       (is (empty? (points e1))))
 
+    (testing "name-prefix"
+      (is (= "Cir" (name-prefix e1))))
+
+    (testing "sort-points"
+      (is (= [[100 200]] (sort-points e1 [[100 200]])))
+      (is (= [[200 300][100 200]] (sort-points e1 [[200 300][100 200]])))
+      (is (= [[200 300][200 100][300 200]] (sort-points e1 [[200 300][300 200][200 100]])))
+      (is (= [[200 300][100 200][200 100][300 200]] (sort-points e1 [[200 300][100 200][300 200][200 100]])))
+      (is (= [] (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]])))
+      (let [cir0 (constructCircle [0 0] 1)]
+        (is (= [[0 1][-1 0][0 -1][1 0]] (sort-points cir0 [[0 1][0 -1][1 0][-1 0]])))
+        )
+      )
+
+    (testing "cut"
+      (let [e2 (constructCircle [0 0] 1)]
+        (is (= [ :delete e2 ] (cut e2 [])))
+        (is (= [ :delete e2 ] (cut e2 [[0 -1]])))
+        (is (= [ :delete e2
+                 :create (constructArc [0 0] 1 [0 1][0 -1])]
+               (cut e2 [[0 -1][0 1]])))
+        (is (= [ :delete e2
+                 :create (constructArc [0 0] 1 [0 -1][0 1])]
+               (cut e2 [[0 1][0 -1]])))
+     (let [cir42 (assoc (constructCircle [364 338] 108.29589) :name "Cir42")]
+       (is (= [ :delete cir42
+                :create (constructArc [364 338] 108.29589 [434.12095 420.5291][280.44076 269.10984])]
+              (cut cir42 [[280.44076 269.10984] [434.12095 420.5291]]))))))
 ;;    (testing "form"
 ;;      ())
     ))
@@ -368,16 +457,45 @@
         (is (math/equals? [150 50] (:p-start e2)))
         (is (math/equals? [100 100] (:p-end e2)))))
 
-
     (testing "intersect"
       (let [pts1 (dedupe (sort (apply concat (map (partial intersect Arc1) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1]))))]
         (is (not-any? false? (map math/equals? (sort pts1) (sort [[3.016201 8.254050][4.177124 6.177124][5.0 10.0][6.822876 8.822876][6.6 9.2][6.630858 9.157714]]))))
     ))
 
+    (testing "between?"
+      (is (between? e1 [200 300][300 200][200 300]))
+      (is (false? (between? e1 [200 300][300 200][100 200])))
+      (let [e2 (constructArc [200 200] 100 [300 200] [100 200])]
+        (is (between? e2 [200 300][300 200][100 200])))
+      (is (false? (between? e1 [310 200][200 100][200 300])))
+      (is (false? (between? e1 [200 300][310 200][100 200])))
+      (is (false? (between? e1 [200 300][300 200][110 200])))
+      (is (false? (between? e1 [200 100][300 200][200 300]))))
 
     (testing "points"
       (is (not-any? false? (map math/equals? (sort (points e1))(sort [[300 200] [200 300]])))))
 
+    (testing "name-prefix"
+      (is (= "Arc" (name-prefix e1))))
+
+    (testing "sort-points"
+      (let [e2 (constructArc [200 200] 100 [100 200][200 300])]
+        (is (= [[200 300]] (sort-points e2 [[200 300]])))
+        (is (= [[300 200][100 200]] (sort-points e2 [[300 200][100 200]])))
+        (is (= [[300 200][200 300][100 200]] (sort-points e2 [[100 200][200 300][300 200]])))
+        (is (= [[200 300][100 200][200 100][300 200]] (sort-points e2 [[200 300][100 200][300 200][200 100]])))
+        (is (empty? (sort-points e2 [[30 100][47 11][47 12][120 110][110 101]])))))
+
+    (testing "cut"
+      (let [e2 (assoc (constructArc [0 0] 1 [1 0][0 -1]) :name "Arc1")]
+        (is (= [ :delete e2 ] (cut e2 [[1 0][0 -1]])))
+        (is (= [ :delete e2 :create (assoc e2 :p-start [-1 0] :p-ref [-1 0]) ] (cut e2 [[1 0][-1 0]])))
+        (is (= [ :delete e2 :create (assoc e2 :p-end [0 1]) ] (cut e2 [[0 1][0 -1]])))
+        (is (= [ :delete e2
+                 :create (assoc e2 :p-end [0 1])
+                 :create (constructArc [0 0] 1 [-1 0][0 -1]) ]
+               (cut e2 [[0 1][-1 0]])))
+      ))
 
 ;;    (testing "form"
 ;;      ())
@@ -454,10 +572,21 @@
           (is (= (count (:p-list e1))(count (:p-list e3))))
           (is (every? true? (map math/equals? [[2.5 0.0] [3.0 1.0] [3.5 0.0]] (:p-list e3)))))))
 
+    (testing "between?"
+      (is (false? (between? e1 [42 43][0 8][15 4711]))))
 
     (testing "points"
       (is (not-any? false? (map math/equals? (sort (points e0))(sort [[-400 300][-300 -100][-200 -200][-100 100][0 0][100 -100][200 100][100 200]])))))
 
+    (testing "name-prefix"
+      (nil? (name-prefix e1)))
+
+    (testing "sort-points"
+      (is (empty? (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]]))))
+
+
+    (testing "cut"
+      (is (empty? (cut e1 [[0 0][42 42]]))))
 
 ;;    (testing "form"
 ;;      ())
@@ -569,9 +698,21 @@
         (is (not-any? false? (map math/equals? (sort pts4) (sort [[542.648790 506.478054] [546.063027 502.514117] [556.690141 513.419845]])))))
       )
 
+    (testing "between?"
+      (is (false? (between? e1 [42 43][0 8][15 4711]))))
+
     (testing "points"
       (let [Drw0 (constructCompound [Pnt3 Lin2 Cir2 Pnt1 Lin1 Arc1 Cir1 Pnt4])]
         (is (not-any? false? (map math/equals? (sort (points Drw0))(sort [[-2.0 7.0][-6.0 6.0][14.0 11.0][5.0 10.0][2.0 4.0][9.0 11.0][7.0 8.0][5.0 6.0][-1.0 -1.0]]))))))
+
+    (testing "name-prefix"
+      (nil? (name-prefix e1)))
+
+    (testing "sort-points"
+      (is (empty? (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]]))))
+
+    (testing "cut"
+      (is (empty? (cut e1 [[0 0][42 42]]))))
 
 ;;    (testing "form"
 ;;      ())
@@ -625,7 +766,7 @@
         (is (math/equals? [-100 200] (:top-left e2)))
         (is (math/equals? [-79.99999999999997 450.0] (:bottom-right e2)))))
 
-    (testing "scale"0
+    (testing "scale"
       (let [e2 (scale e1 3.0)]
         (is (= (:type e1)(:type e2)))
         (is (= (:visible e1) (:visible e2)))
@@ -642,6 +783,25 @@
         (is (math/equals? [137.5 70.0] (:p-ref e2)))
         (is (math/equals? [75 75] (:top-left e2)))
         (is (math/equals? [200.0 65.0] (:bottom-right e2)))))
+
+    (testing "intersect"
+      (let [e2 (constructText "Keep cool, calm, and collected!" [100 200][350 180])]
+        (is (empty? (intersect e1 e2)))))
+
+    (testing "between?"
+      (is (false? (between? e1 [42 43][0 8][15 4711]))))
+
+    (testing "points"
+      (is (empty? (points e1))))
+
+    (testing "name-prefix"
+      (nil? (name-prefix e1)))
+
+    (testing "sort-points"
+      (is (empty? (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]]))))
+
+    (testing "cut"
+      (is (empty? (cut e1 [[0 0][42 42]]))))
 
 ;;    (testing "form"
 ;;      ())
