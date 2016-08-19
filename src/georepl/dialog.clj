@@ -7,17 +7,18 @@
 
 ;;<string> <f> --> [<top-left> <bottom-right> <string> <f>]
 (defn dialog [[x y] sel-coll]
+;(prn "X/Y:" x y "1st:" (:s (first sel-coll)))
   (when-not (empty? sel-coll)
     (let [width (reduce max (map (comp dp/text-width :s) sel-coll))
           x-l x
           x-r (+ x-l width)
           height (:dialog-text-size config/Configuration)]
       (vec (map #(conj {:p1 (vec (list x-l %))}
-                      [:p2 (vec (list x-r (+ % height)))]
-                      [:s (:s %2)]
-                      [:f (:f %2)]
-                      [:create (:create %2)]
-                      [:highlight (:highlight %2)])
+                       [:p2 (vec (list x-r (+ % height)))]
+                       [:s (:s %2)]
+                       [:f (:f %2)]
+                       [:create (:create %2)]
+                       [:highlight (:highlight %2)])
            (iterate (partial + height) y) sel-coll)))))
 
 

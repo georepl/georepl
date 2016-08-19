@@ -45,13 +45,11 @@
                 :just-answered :none
                 :quector [{:s "return"
                            :f (fn[this p]
-;(prn "point f1:" p)
                                 (let [pnt (current-element this)]
                                   (assoc (assoc this :complete? true)
                                     :elem (assoc pnt :p p :p-ref p)
                                     :back-to-drawing? true)))
                            :g (fn[this p]
-;(prn "point g1:" p)
                                 (let [pnt (assoc (current-element this) :p p :p-ref p)]
                                   (update-element this pnt)))
                            :highlight 1}]))
@@ -64,11 +62,11 @@
 
 (defn- next-point [p line]
   (let [q (take 2 p)]
-  (if (:orthogonal? line)
-    (let [p1 [(first (:p1 line)) (second q)]
-          p2 [(first q) (second (:p1 line))]]
-      (if (< (math/dist q p1)(math/dist q p2)) p1 p2))
-    q)))
+    (if (:ortho-polyline? line)
+      (let [p1 [(first (:p1 line)) (second q)]
+            p2 [(first q) (second (:p1 line))]]
+        (if (< (math/dist q p1)(math/dist q p2)) p1 p2))
+      q)))
 
 
 (defrecord LineFactory[elem] IShapesFactory
@@ -78,7 +76,6 @@
                 :just-answered :none
                 :quector [{:s "toggle point"
                            :f (fn[this p]
-;(prn "line f1:" this)
                                (let [line (current-element this)]
                                  (if (math/nearly-zero? (math/dist (:p1 line) p))
                                    this
@@ -86,17 +83,14 @@
                                      :elem (assoc line :p2 (next-point p line) :p-ref (:p2 line))
                                      :complete? true))))
                            :g (fn [this p]
-;(prn "line g1:" p)
                                 (let [line (current-element this)
                                       p3 (next-point p line)]
                                   (update-element this (assoc line :p2 p3 :p-ref p3))))
                            :highlight 1}
                           {:s "return"
                            :f (fn[this p]
-;(prn "line f2:" this)
                                 (assoc this :complete? true :back-to-drawing? true))
                            :g (fn [this p]
-;(prn "line g2:" p)
                                 (let [line (current-element this)
                                       p3 (next-point p line)]
                                   (update-element this (assoc line :p2 p3 :p-ref p3))))
@@ -118,7 +112,6 @@
              :complete? false
              :quector [{:s "pick center point"
                         :f (fn[this p]
-;(prn "circle f1:" this)
                              (if-let [circle (current-element this)]
                                (assoc this
                                  :complete? (= (:just-answered this) :radius)
@@ -127,14 +120,12 @@
                                  :just-answered :center)
                                this))
                         :g (fn[this p]
-;(prn "circle g1:" p)
                              (->> (math/vec-sub p (:p-center (current-element this)))
                                   (shapes/translate (current-element this))
                                   (update-element this)))
                         :highlight 1}
                        {:s "define radius"
                         :f (fn[this p]
-;(prn "circle f2:" p this)
                              (if-let [circle (current-element this)]
                                (assoc this
                                  :complete? (= (:just-answered this) :center)
@@ -152,7 +143,6 @@
                                            :just-answered :radius)
                                this))
                         :g (fn[this p]
-;(prn "circle g2:" p)
                              (let [factor (/ (math/dist (:p-center (current-element this)) p)
                                              (max (:radius (current-element this)) math/EPS))
                                    circle (shapes/scale (current-element this) factor)]
@@ -162,22 +152,18 @@
                         :highlight 0}
                        {:s "define point on circle"
                         :f (fn[this p]
-;(prn "circle f3:" this)
                              (assoc this :complete? false))
                         :g (fn[this p]
-;(prn "circle g3:" p)
                              this)
                         :highlight 0}
                        {:s "return"
                            :f (fn[this p]
-;(prn "circle f4:" this)
                                 (let [pnt (current-element this)]
                                   (assoc this
                                     :complete? true
                                     :elem (assoc pnt :p p :p-ref p)
                                     :back-to-drawing? true)))
                            :g (fn[this p]
-;(prn "circle g4:" p)
                                 (let [pnt (assoc (current-element this) :p p :p-ref p)]
                                   (update-element this pnt)))
                            :highlight 0}])))

@@ -172,12 +172,12 @@
   (let [e (first sel-coll)
         pnt-tl (:p1 e)
         pnt-br (:p2 e)]
-  (quil/text-size (- (second pnt-br)(second pnt-tl)))
-  (doseq [e sel-coll]
-    (do
-      (apply quil/fill
-             (if (pos? (:highlight e))
-               (:orange colours)
-               (:someothercolour colours)))
-      (draw-text (:s e) (:p1 e) (:p2 e))
-  (quil/no-fill)))))
+    (when (not (or (nil? pnt-tl)(nil? pnt-br)))
+      (quil/text-size (- (second pnt-br)(second pnt-tl)))
+      (doseq [e sel-coll]
+        (apply quil/fill
+               (if (pos? (:highlight e))
+                 (:orange colours)
+                 (:someothercolour colours)))
+        (draw-text (:s e) (:p1 e) (:p2 e)))
+      (quil/no-fill))))

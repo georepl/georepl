@@ -505,7 +505,7 @@
     (if-let [elems (:elems shape)]
       (let [cl1 (take-while (comp not empty? second) (iterate (fn [[a c]](list (first c)(rest c))) [(first elems)(rest elems)]))
             cl2 (map (fn[[a c]] (map (partial intersect a) c)) cl1)
-            cl3 (reduce concat (reduce concat cl2))]
+            cl3 (map vec (reduce concat (reduce concat cl2)))]
         (dedupe (sort cl3)))))
 
 
