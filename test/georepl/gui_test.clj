@@ -120,3 +120,5 @@
            :create (shapes/constructArc [0.0 0.0] 10.0 [0 10] [10 0])
            :delete l0]
           (#'gui/cut-elements [0 5] [50 5] [c0 l0 a0] (concat p-list [[0 10][-10 0][0 -10][10 0]]))))))
+
+

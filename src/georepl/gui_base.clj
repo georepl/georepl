@@ -35,7 +35,6 @@
 ;(prn "guibase.set-context-mode:" (count (:selection this)))
  (let [sel (dialog/dialog p (:selection this))
        state (assoc this :selection sel :show-context? true)]
-;(prn "set-context-mode" (count (:selection state))(count (:context-menu state)))
    state))
 
 
@@ -54,7 +53,7 @@
     :save   (do
               (gui/save this)
               this)
-    :undo   (if-let [e (gui/undo this)]
+    :undo   (if-let [e (gui/undo)]
               (assoc this :redo-stack
                           (cons e (:redo-stack this)))
               this)
@@ -68,7 +67,6 @@
 
 
 (defn mouse-pressed [this event]
-;(prn "mouse-pressed" (count (:selection this))(count (:context-menu this))(:show-context? this))
 ;(prn "mouse-pressed:" (:button event) (:show-context? this))
   (let [trace [[(:x event)(:y event)(System/currentTimeMillis)(:button event)]]
         p [(:x event)(:y event)]]
@@ -76,13 +74,12 @@
       (set-context-mode this p)
       (if (:show-context? this)
         (if-let [sel (dialog/select (:x event)(:y event)(:selection this))]
-                 ;sel (dialog/select (:x event)(:y event)(:context-menu this))]
           (assoc this
             :selection sel
             :context-menu sel
             :trace trace
             :f-context (:f (dialog/current-selection sel)))
-          this)
+          (assoc this :show-context? false))
         (assoc this :trace trace
                     :button-released -1)))))
 
@@ -113,7 +110,6 @@
     (assoc new-state :redo-stack (:redo-stack this)
                      :selection (:context-menu this)
                      :show-context? (:show-context? this)
-;;                     :show-trace? (:show-trace? this)
                      :button-released (:button-released this)
                      :mouse-moved? mouse-moved?)))
 
@@ -124,8 +120,9 @@
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 
-(defn context [f state]
-  (gui/context (dissoc state :f-context) f))
+(defn context [f this]
+  (let [state (gui/context (dissoc this :f-context) f)]
+    (assoc state :trace [] :show-context? false)))
 
 
 (defn dashed [this]
@@ -167,12 +164,6 @@
   this)
 
 (defn update-frame [this]
-;(when (and (= (count (:selection this)) 5)
-;           (not (nil? (:factory this))))
-;  (prn "update-frame:" (count (:selection this))))
-;(when (not= (count (:selection this))(count (:context-menu this)))
-;  (prn "reinit-state:" (count (:selection this))(count (:context-menu this))))
-;(assert (= (count (:selection this))(count (:context-menu this))))
   (gui/post-update-frame
     (if (:show-context? this)
       (if-let [f (:f-context this)]

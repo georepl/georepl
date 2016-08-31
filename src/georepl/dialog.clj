@@ -7,7 +7,6 @@
 
 ;;<string> <f> --> [<top-left> <bottom-right> <string> <f>]
 (defn dialog [[x y] sel-coll]
-;(prn "X/Y:" x y "1st:" (:s (first sel-coll)))
   (when-not (empty? sel-coll)
     (let [width (reduce max (map (comp dp/text-width :s) sel-coll))
           x-l x
@@ -55,7 +54,7 @@
 
 (defn current-selection [sel-coll]
   (first
-    (drop-while #(= (:highlight %) 0) sel-coll)))
+    (drop-while #(not (:highlight %)) sel-coll)))
 
 
 (defn select
@@ -69,5 +68,5 @@
     (if (nil? sel-coll)
       nil
       (if-let [e (select-point [x y] sel-coll)]
-        (map #(assoc % :highlight (if (= e %) 1 0)) sel-coll)
+        (map #(assoc % :highlight (= e %)) sel-coll)
         nil))))

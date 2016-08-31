@@ -176,7 +176,8 @@
       (quil/text-size (- (second pnt-br)(second pnt-tl)))
       (doseq [e sel-coll]
         (apply quil/fill
-               (if (pos? (:highlight e))
+;;               (if (pos? (:highlight e))
+               (if (:highlight e)
                  (:orange colours)
                  (:someothercolour colours)))
         (draw-text (:s e) (:p1 e) (:p2 e)))

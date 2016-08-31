@@ -2,6 +2,20 @@
   (:require [clojure.test :refer :all]
             [georepl.mathlib :refer :all]))
 
+(deftest wrappers
+  (is (= 42.6 (abs 42.6)))
+  (is (= 42.6 (abs -42.6)))
+  (is (= 42 (round 42.3)))
+  (is (= 42 (round 41.6)))
+  (is (= 25 (sq 5)))
+  (is (= 3.0 (sqrt 9)))
+  (is (equals? 1.570796 (acos 0)))
+  (is (equals? 0.0 (asin 0)))
+  (is (equals? 0.0 (cos 1.570796)))
+  (is (equals? 1.0 (sin 1.570796)))
+  (is (= 1 (sgn 42)))
+  (is (= -1 (sgn -42))))
+
 (deftest coordinates-test
   (is (equals? [42 43](coordinates [42 43 323253252 :left]))))
 
