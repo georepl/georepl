@@ -38,16 +38,16 @@
 (defn- attributes
   ([]
     ;; initialize
-    {;; :ortho-polyline? false
-      :show-pointlist? false
-      :show-context? false})
+    {:show-pointlist? false
+     :show-context? false
+     :text-visible? true})
   ([state]
     ;; pass on attributes
-    {;; :ortho-polyline? (:ortho-polyline? state)
-      :show-pointlist? (:show-pointlist? state)
-      :show-context? (:show-context? state)})
+    {:show-pointlist? (:show-pointlist? state)
+     :show-context? (:show-context? state)
+     :text-visible? (:text-visible? state)})
   ([state attrbs]
-    ;; teke attributes
+    ;; take attributes
     (merge state attrbs)))
 
 ;;
@@ -92,6 +92,9 @@
 (defn- show-pointlist [state p]
   (assoc state :show-pointlist? (not (:show-pointlist? state))))
 
+(defn- text-visible [state p]
+  (assoc state :text-visible? (not (:text-visible? state))))
+
 
 ;;
 ;; state protocol interface
@@ -124,12 +127,6 @@
 
 (defn- draw-polyline [state p]
   state)
-;;  (assoc state
-;;    :ortho-polyline? false))
-
-;;(defn- draw-ortho-polyline [state p]
-;;  (assoc state
-;;    :ortho-polyline? true))
 
 (defn- draw-point [state p]
   ((wrap reset-state)
@@ -148,15 +145,14 @@
 
 (defn- drawing-dialog []
   (list {:s "Draw Shapes" :f draw-polyline :create :polyline :highlight true}
-;;        {:s "Ortho-Polyline" :f draw-ortho-polyline :create :ortho-polyline :highlight false}
         {:s "Point" :f draw-point  :create :point :highlight false}
         {:s "Modify Shapes" :f modify-mode :create :modify :highlight false}
-        {:s "Show Points" :f show-pointlist :highlight false}))
+        {:s "Show Points" :f show-pointlist :highlight false}
+        {:s "Show Names" :f text-visible :highlight true}))
 
 
 (defn- create-elem [this trace e]
   (case (:create e)
-;;    :ortho-polyline  (assoc (shapes/constructLine (first trace)(last trace)) :ortho-polyline? true)
     :point           (shapes/constructPoint (last trace))
                      (freehand/analyze-shape (map butlast trace))))
 
@@ -176,7 +172,7 @@
 
   (draw-temporary [this]
     (when (:show-trace? this)
-      (dp/draw-element {:params (:trace this) :visible 1} :green))
+      (dp/draw-element {:params (:trace this) :visible 1} :green false))
     this)
 
   (picked [this p]
@@ -190,7 +186,6 @@
         (->Creating (:redo-stack this)
                     (:selection this)
                     (shapesFactory/createShapeFactory
-;;;                      (assoc (freehand/analyze-shape [q q]) :ortho-polyline? (:ortho-polyline? this)))
                       (freehand/analyze-shape [q q]))
                     (attributes this)))
       this))
@@ -228,7 +223,6 @@
                       (:selection state)
                       (shapesFactory/createShapeFactory
                         elem)
-;;;                        (assoc elem :ortho-polyline? (:ortho-polyline? this)))
                       (attributes state))))))
 
   (context [this f]
@@ -262,7 +256,6 @@
                               (attributes state)))
         :line   ((wrap reset-state)
                   (->Creating []
-;;                              (:selection-save (assoc state :ortho-polyline? (:ortho-polyline? state)))
                               (:selection-save state)
                               (shapesFactory/createShapeFactory
                                 (assoc (shapes/constructLine (:p2 (second shape))(:p2 (second shape)))
@@ -270,7 +263,6 @@
                               (attributes state)))
 
                 (do
-;(prn "missing case" (first shape))
                   ((wrap reset-state)
                     (->Drawing []
                                (:selection-save state)
@@ -292,7 +284,7 @@
   (draw-temporary [this]
 ;(prn "Creating.draw-temporary, ortho:" (:ortho-polyline? (shapesFactory/current-element (:factory this))))
     (when-let [e (shapesFactory/current-element (:factory this))]
-      (dp/draw-element e :orange)
+      (dp/draw-element e :orange false)
       (dp/draw-point (:p-ref e) :blue))
     this)
 
@@ -340,12 +332,16 @@
       this)))
 
 
-;;
+;
 ;; mofifications mode
 ;;
 (defn- create-compound [this p]
-;(prn "create compound")
+(prn "create compound")
   this)
+
+(defn- select-elements [state p]
+(prn "select-elements")
+  state)
 
 (defn- drawing-mode [this p]
   ((wrap reset-state)
@@ -355,7 +351,7 @@
 
 
 (defn- modifying-dialog []
-  (list {:s "Show Points" :f show-pointlist :highlight false}
+  (list {:s "Select elements" :f select-elements :highlight true}
         {:s "Create Compound" :f create-compound :highlight false}
         {:s "Drawing Mode" :f drawing-mode :highlight false}))
 
@@ -381,7 +377,7 @@
   (draw-temporary [this]
 ;(prn "Modifying.draw-temporary")
     (doseq [e (:current-elements this)]
-      (dp/draw-element e :red))
+      (dp/draw-element e :red false))
     (doseq [e (:p-list this)]
       (dp/draw-point e :green))
     this)
@@ -450,7 +446,7 @@
 
 (defn draw [state]
   (doseq [e (elements/list-elems)]
-    (dp/draw-element e))
+    (dp/draw-element e (:text-visible? state)))
   (when (:show-context? state)
     (dp/text-height (:dialog-text-size config/Configuration))
     (dp/draw-text-vec (:selection state))

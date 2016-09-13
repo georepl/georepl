@@ -23,7 +23,7 @@
 
 
 (defn draw-temporary [state]
-  (dp/draw-element {:params (last (:selected state))} :orange)
+  (dp/draw-element {:params (last (:selected state))} :orange false)
   state)
 
 
@@ -94,5 +94,5 @@
 
 (defn draw [state]
   (doseq [e (elements/list-elems)]
-    (dp/draw-element e))
+    (dp/draw-element e false))
   (draw-temporary state))

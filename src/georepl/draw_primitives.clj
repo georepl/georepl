@@ -109,8 +109,6 @@
             hp (math/vec-add p-center (math/vec-add v w))
             fct (/ (+ 10 radius)(max 1 (math/length (math/vec-sub hp p-center))))
             p (math/vec-scale p-center hp fct)]
-;(prn "ARC:" p-center radius p-start p-end)
-;(prn "hp" hp "fct" fct "p" p)
         (draw-name name p)))
     (draw-arc p-center radius p-start p-end)))
 
@@ -141,29 +139,30 @@
 
 
 (defn draw-element
-  ([elem]
-    (if (or (nil? elem)(not= 1 (:visible elem)))
+  ([el text-visible?]
+    (if (or (nil? el)(not= 1 (:visible el)))
       nil
-      (case (:type elem)
-        :point         (do
-                         (when-let [s (:name elem)]
-                          (draw-name s (:p elem)))
+      (let [elem (if text-visible? el (dissoc el :name))]
+        (case (:type elem)
+          :point         (do
+                           (when-let [s (:name elem)]
+                            (draw-name s (:p elem)))
                        (draw-point (:p elem)))
-        :line          (draw-line (:p1 elem) (:p2 elem)(:name elem))
-        :arc           (draw-arc (:p-center elem)(:radius elem)(:p-start elem)(:p-end elem)(:name elem))
-        :circle        (draw-circle (:p-center elem) (:radius elem)(:name elem))
-        :text          (draw-text (:str elem) (:top-left elem) (:bottom-right elem) :black)
-        :contour       (draw-contour (:p-list elem)(:name elem))
+          :line          (draw-line (:p1 elem) (:p2 elem)(:name elem))
+          :arc           (draw-arc (:p-center elem)(:radius elem)(:p-start elem)(:p-end elem)(:name elem))
+          :circle        (draw-circle (:p-center elem) (:radius elem)(:name elem))
+          :text          (draw-text (:str elem) (:top-left elem) (:bottom-right elem) :black)
+          :contour       (draw-contour (:p-list elem)(:name elem))
 
-                       (when-let [params (:params elem)]
-                         (if (= (count params) 1)
-                           (draw-point (first params))
-                           (draw-contour params))))))
-  ([elem colour]
+                         (when-let [params (:params elem)]
+                           (if (= (count params) 1)
+                             (draw-point (first params))
+                             (draw-contour params)))))))
+  ([elem colour text-visible?]
     (when-let [colvec (colour colours)]
       (when (coll? colvec)
         (apply quil/stroke colvec)))
-    (draw-element elem)
+    (draw-element elem text-visible?)
     (apply quil/stroke (:black colours))))
 
 
@@ -176,7 +175,6 @@
       (quil/text-size (- (second pnt-br)(second pnt-tl)))
       (doseq [e sel-coll]
         (apply quil/fill
-;;               (if (pos? (:highlight e))
                (if (:highlight e)
                  (:orange colours)
                  (:someothercolour colours)))

@@ -5,7 +5,6 @@
             [quil.core :as quil]
             [quil.middleware :as m]
             [georepl.gui-base :as gui-base]
-;            [georepl.gui :as gui]
             [georepl.gallery :as gallery]))
 
 
@@ -43,7 +42,7 @@
 ;; main gui
 ;;
 (defn init-frame-gui []
-  (quil/defsketch GeoRepl
+  (quil/sketch
     :size [800 800]
     :features [:resizable]
     :title "GeoRepl"
@@ -68,7 +67,7 @@
   (quil/no-fill)
 
 ;; reduced frame rate for testing purposes
-(quil/frame-rate 5)
+;(quil/frame-rate 5)
 
   ; initial state
   (gallery/init size drw-list f-on-close))
@@ -96,7 +95,7 @@
 ;; main gallery
 ;;
 (defn init-frame-gallery [drw-list f-on-close]
-  (quil/defsketch Gallery
+  (quil/sketch
     :size [600 600]
     :title "GeoRepl Gallery - Select A Drawing"
     :setup (fn [](setup-gallery [600 600] drw-list f-on-close))
@@ -107,5 +106,3 @@
     :key-pressed key-pressed-gallery
     :middleware [m/fun-mode])
   nil)
-
-
