@@ -11,7 +11,7 @@
 ;; Walking down the stack rewinds the former states of the drawing (undo).
 ;; Every time a drawing is changed a new version of the drawing compound is pushed onto the stack.
 ;; The elements map contains a list of currently displayed shapes for performance reasons.
-(def elements (atom {:stack [] :upd-f nil}))
+(def elements (atom {:stack [] :upd-f nil :selected-elem nil}))
 
 
 (defn- out[]
@@ -20,7 +20,8 @@
 
 ;; reinitialize the whole elements stack
 (defn clear []
-  (swap! elements assoc :stack []))
+  (swap! elements assoc :stack [] :upd-f nil :selected-elem nil))
+;;  (swap! elements assoc :stack []))
 
 
 (defn- elements-length []
@@ -31,38 +32,63 @@
   (last (:stack @elements)))
 
 
-(defn- newest-shape []
-  (last (:elems (:drw-elem (tos)))))
+(defn- collect-elements
+  ([drw]
+    (:elems drw))
+  ([]
+    (collect-elements (:drw-elem (tos)))))
 
 
-(defn- collect-shapes[elem]
-  (if (= (:type elem) :compound)
-    (map collect-shapes (:elems elem))
-    elem))
-
-
-(defn- collect-elements [elem]
-  (if (= (:type elem) :compound)
-    (cons elem (map collect-elements (:elems elem)))
-    elem))
-
-
-(defn- collect-named-elements [elem]
-  (->> elem
-       (collect-elements)
-       (filterv #(not (nil? (:name %))))))
-
+(defn show-elements []
+  (:elems (:drw-elem (tos))))
 
 (defn- find-element-by-name [name]
-  (->> (tos)
-       (:drw-elem)
-       (collect-elements)
-       (filter #(= (:name %) name))
-       (first)))
+  (if (nil? name)
+    nil
+    (->> (show-elements)
+         (filter #(= (:name %) name))
+         (first))))
+
+(defn- newest-shape []
+  (first (show-elements)))
+
+(defn- collect-shapes[drw]
+  (filter #(not= (:type %) :compound) (:elems drw)))
 
 
-(defn- shapes-count []
-  (count (collect-elements (:drw-elem (tos)))))
+(defn expand-compounds [elems]
+  (vec
+    (dedupe
+      (reduce concat
+       (map #(if (= (:type %) :compound) (expand-compounds (:elems %)) (list %)) elems)))))
+
+
+(defn- diff-set [coll subcoll]
+  (if (empty? subcoll)
+    coll
+    (diff-set (filter (partial not= (first subcoll)) coll) (rest subcoll))))
+
+
+(defn- colour-shapes [shapes sel-shapes]
+  (let [sel (expand-compounds sel-shapes)]
+    (vec
+      (concat
+        (map #(dissoc % :colour) (diff-set shapes sel))
+        (map #(assoc % :colour :green) sel)))))
+
+
+(defn select-elem [name]
+  (let [selem (find-element-by-name name)
+        shapes (vec (map #(dissoc % :colour) (:shapes-list (tos))))]
+    (swap! elements assoc :selected-elem selem)
+    (if (nil? selem)
+      (swap! elements assoc-in [:stack (dec (elements-length)) :shapes-list] shapes)
+      (swap! elements assoc-in [:stack (dec (elements-length)) :shapes-list] (colour-shapes shapes (vec (list selem)))))
+    selem))
+
+
+(defn cur-selected-elem []
+  (:selected-elem @elements))
 
 
 (defn register [f]
@@ -80,14 +106,14 @@
 
 (defn- push-drawing [drw elem]
   (assert
-    (and (= (:type drw) :compound)(= (:subtype drw) :drawing))
+    (and (= (:type drw) :compound)(= (:subtype drw) :drawing)(satisfies? shapes/IShape drw))
     (prn-str "Element stack corrupt! :bottom-element-on-stack" drw))
   (let [shapes-list (filter
                       #(> (:visible %) 0)
                       (flatten (collect-shapes drw)))
         points-list (dedupe (sort (concat (shapes/intersect drw drw)(shapes/points drw))))
         new-drw {:drw-elem drw :shapes-list shapes-list :points-list points-list}
-        new-stack (conj (:stack @elements) new-drw)]
+        new-stack (conj (vec (:stack @elements)) new-drw)]
     (swap! elements assoc :stack new-stack)
     (reinit-repl-server elem)
     (if (nil? elem) drw elem)))
@@ -101,7 +127,7 @@
   (if (and (= (:type e) :compound)(= (:subtype e) :drawing))
     (push-drawing e nil)
     (let [drw (:drw-elem (tos))
-          elems (conj (:elems drw) e)]
+          elems (cons e (vec (:elems drw)))]
       (push-drawing (assoc drw :elems elems) e))))
 
 
@@ -117,7 +143,11 @@
       (tos))))
 
 
-(defn list-elems []
+(defn list-elements []
+  (show-elements))
+
+
+(defn list-shapes []
   (:shapes-list (tos)))
 
 
@@ -128,7 +158,7 @@
 ;;
 ;; unique names for elements
 (defn- cut-name-str[prefix s]
-  (if (s/starts-with? s prefix)
+  (if (and (string? s)(string? prefix)(s/starts-with? s prefix))
     (apply str (drop (count prefix) s))
     nil))
 
@@ -139,32 +169,41 @@
     (inc (Integer/parseInt idx-coll))))
 
 
-(defn- unique-name [prefix names-list]
-  (let [name (->> names-list
-                  (sort)
-                 (map (partial cut-name-str prefix))
-                 (filter #(not (nil? %)))
-                 (sort #(compare (count %1)(count %2)))
-                 (last)
-                 (next-unused-index)
-                 (format "%s%d" prefix))]
-    [name (cons name names-list)]))
+(defn unique-name
+  ([prefix names-list]
+    (let [name (->> (if (nil? names-list) [] names-list)
+                    (sort)
+                    (map (partial cut-name-str prefix))
+                    (filter #(not (nil? %)))
+                    (sort #(compare (count %1)(count %2)))
+                    (last)
+                    (next-unused-index)
+                    (format "%s%d" prefix))]
+       name))
+  ([prefix]
+    (unique-name prefix (map #(:name %) (list-shapes)))))
+
 
 
 ;; multiple push and pop operations in one transition
 (defn update-elements
-  ([todos] (update-elements todos (collect-shapes (:drw-elem (tos))) (map #(:name %) (list-elems))))
+  ([todos] (update-elements todos (collect-shapes (:drw-elem (tos))) (map #(:name %) (list-shapes))))
   ([todos elems names-list]
     (if (empty? todos)
-      (if (empty? elems)
-        nil
-        (push-elems elems))
+      (push-elems (vec (set elems)))
       (let [cmd (first todos)
-            elem (second todos)]
+            elem (second todos)
+            remain-todos (vec (if (= (:type elem) :compound)
+                                (concat (interleave (repeat cmd) (:elems elem))(nthrest todos 2))
+                                (nthrest todos 2)))]
         (case cmd
-          :create (let [[name names] (unique-name (shapes/name-prefix elem) names-list)]
-                    (update-elements (nthrest todos 2)(cons (assoc elem :name name) elems) names))
-          :delete (update-elements (nthrest todos 2)(filter (partial not= elem) elems) names-list))))))
+          :create (let [nom (:name elem)
+                        name (if (nil? nom)
+                               (unique-name (shapes/name-prefix elem) names-list)
+                               nom)]
+                    (update-elements remain-todos (cons (assoc elem :name name) elems) (cons name names-list)))
+          :delete (let []
+                    (update-elements remain-todos (filter (partial not= elem) elems) names-list)))))))
 
 
 (defn spit-drawing []

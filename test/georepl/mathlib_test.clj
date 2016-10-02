@@ -136,12 +136,31 @@
   (testing "standard situations orthogonal to x/y axes"
     (let [p1 [100 100]
           p2 [100 200]]
-      (is (equals? [150 200] (project-line [150 90] p1 p2)))))
+      (is (equals? [100 90] (project-line [150 90] p1 p2)))))
   (testing "standard situations non-orthogonal to x/y"
     (let [p1 [10 10]
           p2 [20 30]]
-      (is (equals? [32 24] (project-line [30 20] p1 p2)))))
-  )
+      (is (equals? [18 26] (project-line [30 20] p1 p2))))
+    (let [p1 [0 0]
+          p2 [50 50]]
+      (is (equals? [25 25] (project-line [30 20] p1 p2))))
+    ))
+
+(deftest mirror-point-test
+  (let [p [100 100]]
+    (testing "p = p1"
+      (is (equals? p (mirror-point [100 100] [300 400] p))))
+    (testing "p = p2"
+      (is (equals? p (mirror-point [0 0] [100 100] p))))
+    (testing "p on p1, p2"
+      (is (equals? p (mirror-point [0 0] [300 300] p))))
+    (testing "p1, p2 parallel to x-axis"
+      (is (equals? [100 -100] (mirror-point [0 0] [300 0] p))))
+    (testing "p1, p2 parallel to y-axis"
+      (is (equals? [-100 100] (mirror-point [0 0] [0 300] p))))
+    (testing "mirror axis diagonal"
+      (is (equals? [200 10] (mirror-point [0 0] [300 300] [10 200]))))
+      ))
 
 (deftest on-straight-line?-test
   (testing "on-straight-line?"

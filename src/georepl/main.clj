@@ -32,7 +32,7 @@
                      :p-ref (math/vec-scal-mult 0.5 (:size drawing))
                      :subtype :frame)]
     (shapes/scale
-      (assoc drawing :elems (cons frm (:elems drawing)))
+      (assoc drawing :elems (vec (cons frm (:elems drawing))))
         ratio)))
 
 
@@ -141,7 +141,6 @@
       ;; start gallery
       (frame/init-frame-gallery drw-list start-existing-drawing)
       (start-new-drawing size files))))
-
 
 
 ;; start the show ...

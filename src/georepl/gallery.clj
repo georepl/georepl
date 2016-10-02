@@ -23,7 +23,7 @@
 
 
 (defn draw-temporary [state]
-  (dp/draw-element {:params (last (:selected state))} :orange false)
+  (dp/draw-element {:type :contour :p-list (last (:selected state)) :visible 1} :orange false)
   state)
 
 
@@ -66,6 +66,11 @@
       (map frame-list (:elems elem))
       nil)))
 
+(defn- recursive-extract-coll [coll]
+  (let [elems (vec (reduce concat (map #(if (= (:type %) :compound) (:elems %) [%]) coll)))]
+    (if (some #(= (:type %) :compound) elems)
+      (recursive-extract-coll elems)
+      elems)))
 
 (defn- extract [frame]
   (let [elems (:elems frame)
@@ -85,7 +90,7 @@
                              (map frame-list
                                   (:elems drw-list))))
         frames (map #(cons %2 %1) (map extract frames-raw) (range))]
-   (assoc {} :elems (elements/list-elems)
+   (assoc {} :elems (recursive-extract-coll [drw-list])
              :frames frames
              :selected (first frames)
              :complete false
@@ -93,6 +98,6 @@
 
 
 (defn draw [state]
-  (doseq [e (elements/list-elems)]
+  (doseq [e (:elems state)]
     (dp/draw-element e false))
   (draw-temporary state))

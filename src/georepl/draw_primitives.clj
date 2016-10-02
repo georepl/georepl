@@ -146,13 +146,15 @@
         (case (:type elem)
           :point         (do
                            (when-let [s (:name elem)]
-                            (draw-name s (:p elem)))
-                       (draw-point (:p elem)))
+                             (draw-name s (:p elem)))
+                           (draw-point (:p elem)))
           :line          (draw-line (:p1 elem) (:p2 elem)(:name elem))
           :arc           (draw-arc (:p-center elem)(:radius elem)(:p-start elem)(:p-end elem)(:name elem))
           :circle        (draw-circle (:p-center elem) (:radius elem)(:name elem))
           :text          (draw-text (:str elem) (:top-left elem) (:bottom-right elem) :black)
           :contour       (draw-contour (:p-list elem)(:name elem))
+          :compound      (doseq [e (:elems elem)]
+                           (draw-element e text-visible?))
 
                          (when-let [params (:params elem)]
                            (if (= (count params) 1)

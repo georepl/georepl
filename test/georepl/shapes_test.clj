@@ -132,7 +132,16 @@
     (testing "cut"
       (is (empty? (cut e1 [[0 0][42 42]]))))
 
-;;    (testing "form"
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (is (= (constructPoint [10.0 7.0]) (transform-points (constructPoint [7.0 10.0]) f3)))))
+
+
+    ;;    (testing "form"
 ;;      (let [e2 (constructPoint [42 43])
 ;;            e3 (assoc e2 :name "test")]
 ;;        (is (= "test" (form e3)))))
@@ -243,6 +252,14 @@
         (is (= [ :delete e2 :create (assoc e2 :p2 [-1 2])
                  :create (constructLine [0 1] [3 -2])] (cut e2 [[-1 2][0 1]])))
         ))
+
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (is (= (constructLine [10.0 7.0][10.0 -30.0]) (transform-points (constructLine [7.0 10.0][-30.0 10.0]) f3)))))
 
 ;;    (testing "form"
 ;;      ())
@@ -358,6 +375,16 @@
        (is (= [ :delete cir42
                 :create (constructArc [364 338] 108.29589 [434.12095 420.5291][280.44076 269.10984])]
               (cut cir42 [[280.44076 269.10984] [434.12095 420.5291]]))))))
+
+
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (is (= (constructCircle [10.0 7.0] 42) (transform-points (constructCircle [7.0 10.0] 42) f3)))))
+
 ;;    (testing "form"
 ;;      ())
     ))
@@ -497,6 +524,14 @@
                (cut e2 [[0 1][-1 0]])))
       ))
 
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (is (= (constructArc [10.0 7.0] 42.0 [52.0 7.0][-32.0 7.0]) (transform-points (constructArc [7.0 10.0] 42.0 [7.0 52.0][7.0 -32.0]) f3)))))
+
 ;;    (testing "form"
 ;;      ())
     ))
@@ -584,9 +619,16 @@
     (testing "sort-points"
       (is (empty? (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]]))))
 
-
     (testing "cut"
       (is (empty? (cut e1 [[0 0][42 42]]))))
+
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (is (= (constructContour [[10.0 7.0][12.0 8.0][8.0 10.0]]) (transform-points (constructContour [[7.0 10.0] [8.0 12.0][10.0 8.0]]) f3)))))
 
 ;;    (testing "form"
 ;;      ())
@@ -594,12 +636,17 @@
 
 
 (deftest compound-test
-  (let [coll (list (constructPoint [150 250])
-                   (constructLine [400 350][250 60])
-                   (constructCircle [450 450] 80)
-                   (constructArc [200 450] 30 [230 450][200 480])
-                   (constructContour [[100 350][50 450][150 400][200 350]]))
+  (let [p1 (constructPoint [150 250])
+        l1 (constructLine [400 350][250 60])
+        c1 (constructCircle [450 450] 80)
+        a1 (constructArc [200 450] 30 [230 450][200 480])
+        ct (constructContour [[100 350][50 450][150 400][200 350]])
+        coll (list p1 l1 c1 a1 ct)
         e1 (constructCompound coll)]
+    (testing "compound elements"
+      (is (= (count (:elems e1)) 5))
+      (is (= (count (:elems (constructCompound [l1 c1 a1]))) 3)))
+
     (testing "constructCompound"
       (is (= :compound (:type e1)))
       (is (= 0         (:visible e1)))
@@ -703,7 +750,13 @@
 
     (testing "points"
       (let [Drw0 (constructCompound [Pnt3 Lin2 Cir2 Pnt1 Lin1 Arc1 Cir1 Pnt4])]
-        (is (not-any? false? (map math/equals? (sort (points Drw0))(sort [[-2.0 7.0][-6.0 6.0][14.0 11.0][5.0 10.0][2.0 4.0][9.0 11.0][7.0 8.0][5.0 6.0][-1.0 -1.0]]))))))
+        (is (not-any? false? (map math/equals? (sort (points Drw0))(sort [[-2.0 7.0][-6.0 6.0][14.0 11.0][5.0 10.0][2.0 4.0][9.0 11.0][7.0 8.0][5.0 6.0][-1.0 -1.0]]))))
+        (let [Cmp1 (constructCompound [Pnt3 Lin2 Cir2])]
+          (is (not-any? false? (map math/equals? (sort (points Cmp1))(sort [[-2.0 7.0][-6.0 6.0][14.0 11.0]]))))
+          (let [Cmp2 (constructCompound [Cmp1 Pnt1])]
+            (is (not-any? false? (map math/equals? (sort (points Cmp2))(sort [[-2.0 7.0][-6.0 6.0][14.0 11.0][5.0 10.0]]))))
+            (let [Cmp3 (constructCompound [Pnt4 Cmp2 Lin1])]
+              (is (not-any? false? (map math/equals? (sort (points Cmp3))(sort [[-2.0 7.0][-6.0 6.0][-1.0 -1.0][2.0 4.0][14.0 11.0][5.0 10.0][9.0 11.0]])))))))))
 
     (testing "name-prefix"
       (nil? (name-prefix e1)))
@@ -714,9 +767,24 @@
     (testing "cut"
       (is (empty? (cut e1 [[0 0][42 42]]))))
 
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (let [p2 (constructPoint [250.0 150.0])
+              l2 (constructLine [350.0 400.0][60.0 250.0])
+              c2 (constructCircle [450.0 450.0] 80)
+              a2 (constructArc [450.0 200.0] 30 [450.0 230.0][480.0 200.0])
+              cnt2 (constructContour [[350.0 100.0][450.0 50.0][400.0 150.0][350.0 200.0]])
+              e2 (constructCompound [p2 l2 c2 a2 cnt2])]
+                (is (= e2 (transform-points e1 f3))))))
+
 ;;    (testing "form"
 ;;      ())
     ))
+
 
 
 (deftest text-test
@@ -802,6 +870,14 @@
 
     (testing "cut"
       (is (empty? (cut e1 [[0 0][42 42]]))))
+
+    (testing "transform-points"
+      (let [f1 identity
+            f2 (partial math/vec-add [50 -30])
+            f3 (partial math/mirror-point [-10 -10][10 10])]
+        (is (= e1 (transform-points e1 f1)))
+        (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
+        (is (= (constructText "What the hack!" [100.0 100.0][80.0 350.0]) (transform-points e1 f3)))))
 
 ;;    (testing "form"
 ;;      ())

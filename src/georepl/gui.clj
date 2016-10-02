@@ -192,7 +192,7 @@
 
   ;; remove the previously drawn element and return to initial drawing mode
   (dashed [this trace]
-    (let [todos (cut-elements (math/coordinates (first trace))(math/coordinates (last trace))(elements/list-elems)(elements/list-points))]
+    (let [todos (cut-elements (math/coordinates (first trace))(math/coordinates (last trace))(elements/list-shapes)(elements/list-points))]
 (prn "Drw. dashed, todos empty?:" (empty? todos))
       (if (empty? todos)
         (if-let [e (elements/pop-elem)]
@@ -385,7 +385,7 @@
   ;; pick the nearest element and add it to elements list
   (picked [this p]
 ;(prn "Mod. picked" (:show-pointlist? this))
-    (if-let [[elem p d] (next-element (elements/list-elems) p)]
+    (if-let [[elem p d] (next-element (elements/list-shapes) p)]
       (assoc this :current-elements (elem-in-out this elem))
       this))
 
@@ -398,7 +398,7 @@
   ;; 1. if l intersects an existing shape: delete the part of the shape between the nearest points
   ;; 2. undo otherwise
   (dashed [this trace]
-    (let [todos (cut-elements (math/coordinates (first trace))(math/coordinates (last trace))(elements/list-elems)(elements/list-points))]
+    (let [todos (cut-elements (math/coordinates (first trace))(math/coordinates (last trace))(elements/list-shapes)(elements/list-points))]
 (prn "Mod. dashed:" (count todos))
       (if (empty? todos)
         (if-let [e (elements/pop-elem)]
@@ -445,8 +445,10 @@
   ((wrap reset-state) (->Drawing [] (drawing-dialog) (attributes))))
 
 (defn draw [state]
-  (doseq [e (elements/list-elems)]
-    (dp/draw-element e (:text-visible? state)))
+  (doseq [e (elements/list-shapes)]
+    (if-let [col (:colour e)]
+      (dp/draw-element e col (:text-visible? state))
+      (dp/draw-element e (:text-visible? state))))
   (when (:show-context? state)
     (dp/text-height (:dialog-text-size config/Configuration))
     (dp/draw-text-vec (:selection state))

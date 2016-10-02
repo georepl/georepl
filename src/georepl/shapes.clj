@@ -16,6 +16,7 @@
   (name-prefix [this])
   (sort-points [this pnt-list])
   (cut [this [p q]])
+  (transform-points [this f])
   (form [this]))
 
 
@@ -92,6 +93,9 @@
 
   (cut [this [p q]]
     [])
+
+  (transform-points [this f]
+    (assoc this :p (f (:p this)) :p-ref (f (:p-ref this))))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -173,6 +177,9 @@
         [ :delete this :create (assoc this :p2 p :name (:name this))
           :create (constructLine q (:p2 this))])))
 
+  (transform-points [this f]
+    (assoc this :p1 (f (:p1 this)) :p2 (f (:p2 this)) :p-ref (f (:p-ref this))))
+
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
 
@@ -248,15 +255,16 @@
     (->> pnt-list
          (filter #(math/on-circle? % (:p-center this)(:radius this)))
          (dedupe)
-;         (sort-by #(math/right-from? (first pnt-list)) (:p-center this) %)))
          (sort #((comparator (fn[p q](math/right-from? (first pnt-list) q p))) %1 %2))))
 
   (cut [this points]
-;(prn "CUT:" (:p-center this)(:radius this) "POINTS:" points)
     (if (< (count points) 2)
       [ :delete this]
       [ :delete this
         :create (constructArc (:p-center this)(:radius this)(second points)(first points))]))
+
+  (transform-points [this f]
+    (assoc this :p-center (f (:p-center this)) :p-ref (f (:p-ref this))))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -362,6 +370,9 @@
         [ :delete this :create (assoc this :p-end p)
           :create (constructArc (:p-center this)(:radius this) q (:p-end this))])))
 
+  (transform-points [this f]
+    (assoc this :p-center (f (:p-center this)) :p-start (f (:p-start this)) :p-end (f (:p-end this)) :p-ref (f (:p-ref this))))
+
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
 
@@ -436,6 +447,11 @@
   (cut [this [p q]]
 ;;NYI: ToBeDone
     [])
+
+  (transform-points [this f]
+    (let [new-p-list (vec (map f p-list))]
+      (assoc this :p-list new-p-list
+                  :p-ref (first new-p-list))))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -519,7 +535,7 @@
         (map vec (apply concat (map points (:elems this)))))))
 
   (name-prefix [this]
-    nil)
+    "Cmpnd")
 
   (sort-points [this pnt-list]
     [])
@@ -527,6 +543,9 @@
   (cut [this [p q]]
 ;;NYI: ToBeDone ???
     [])
+
+  (transform-points [this f]
+    (assoc this :elems (vec (map #(transform-points % f) (:elems this))) :p-ref (f (:p-ref this))))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))
@@ -597,6 +616,9 @@
 
   (cut [this [p q]]
     [])
+
+  (transform-points [this f]
+    (assoc this :top-left (f (:top-left this)) :bottom-right (f (:bottom-right this)) :p-ref (f (:p-ref this))))
 
   (form [this]
     (pr-str (format "def %s" (:name this)) this)))

@@ -112,8 +112,15 @@
     p1
     (let [v (vec-sub p p2)
           w (vec-ortho (vec-sub p1 p2))
-          a (/ (dot-product v w)(dot-product w w))]
-      (vec-add p2 (vec-scal-mult a w)))))
+          a (* -1 (/ (dot-product v w)(dot-product w w)))]
+      (vec-add p (vec-scal-mult a w)))))
+
+
+;; mirror p at axis given by p1 p2
+(defn mirror-point [p1 p2 p]
+  (let [q (project-line p p1 p2)
+        v (vec-sub q p)]
+    (vec-add q v)))
 
 (defn on-straight-line? [q p1 p2]
   (let [v (vec-sub p2 p1)
