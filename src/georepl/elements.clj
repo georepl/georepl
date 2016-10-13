@@ -11,7 +11,14 @@
 ;; Walking down the stack rewinds the former states of the drawing (undo).
 ;; Every time a drawing is changed a new version of the drawing compound is pushed onto the stack.
 ;; The elements map contains a list of currently displayed shapes for performance reasons.
-(def elements (atom {:stack [] :upd-f nil :selected-elem nil}))
+;; Since this is the only atom within GeoRepl it contains other global information as well.
+;; At program start a renderer for the graphical input/output is initialized and must remain available until the program is quit.
+;; The renderer is kept in the value for the key :renderer.
+;; The upd-f value is the place to store an optional update function. When a shape is changed in the Repl client the drawing won't change.
+;; Of course not, since we don't change objects in Clojure, we create new objects. Whether this ('functional') approach will be maintained
+;; or the drawing is held consistent with the Repl is a design decision still to be made. In the latter case we will need upd-f in the future.
+;; The :selected-elem value holds the information which object the API functions in georepl.user rely to.
+(def elements (atom {:stack [] :upd-f nil :selected-elem nil :renderer nil}))
 
 
 (defn- out[]
@@ -21,7 +28,6 @@
 ;; reinitialize the whole elements stack
 (defn clear []
   (swap! elements assoc :stack [] :upd-f nil :selected-elem nil))
-;;  (swap! elements assoc :stack []))
 
 
 (defn- elements-length []
@@ -39,18 +45,18 @@
     (collect-elements (:drw-elem (tos)))))
 
 
-(defn show-elements []
+(defn list-elements []
   (:elems (:drw-elem (tos))))
 
 (defn- find-element-by-name [name]
   (if (nil? name)
     nil
-    (->> (show-elements)
+    (->> (list-elements)
          (filter #(= (:name %) name))
          (first))))
 
 (defn- newest-shape []
-  (first (show-elements)))
+  (first (list-elements)))
 
 (defn- collect-shapes[drw]
   (filter #(not= (:type %) :compound) (:elems drw)))
@@ -95,6 +101,11 @@
   (assert fn? f)
   (swap! elements assoc :upd-f f))
 
+(defn set-renderer [renderer]
+  (swap! elements assoc :renderer renderer))
+
+(defn get-renderer []
+  (:renderer @elements))
 
 (defn- reinit-repl-server [elem]
   (if (or (nil? elem)(nil? (:name elem)))
@@ -122,7 +133,7 @@
 ;; The drawings stack is empty iff no push has been performed yet.
 ;; The first pushed element is either a drawing loaded from a file or an empty one.
 ;; Every change of the current drawing's elements results in a new drawing which goes on top of this stack.
-;; So the current drawing's elements can be accessed using tos.
+;; So, all the current drawing's elements can be accessed using tos.
 (defn push-elem [e]
   (if (and (= (:type e) :compound)(= (:subtype e) :drawing))
     (push-drawing e nil)
@@ -143,10 +154,6 @@
       (tos))))
 
 
-(defn list-elements []
-  (show-elements))
-
-
 (defn list-shapes []
   (:shapes-list (tos)))
 
@@ -155,7 +162,6 @@
   (:points-list (tos)))
 
 
-;;
 ;; unique names for elements
 (defn- cut-name-str[prefix s]
   (if (and (string? s)(string? prefix)(s/starts-with? s prefix))

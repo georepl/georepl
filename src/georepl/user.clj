@@ -6,19 +6,10 @@
             [georepl.configuration :as config]))
 
 
-;; load all shapes into the current namespace so they are conveniently accessible from a client
-;;
-(defn- update-elements [s]
-  (if (seq? s)
-    (doseq [s s]
-      (load-string s))
-    (load-string s)))
-
-
 (defn start []
   [(repl/start-server
     :port (:repl-server-port config/Configuration))
-   update-elements])
+   nil])
 
 
 (defn stop [server]
@@ -177,17 +168,18 @@
     nil))
 
 (defn undo []
-  (elements/pop-elem))
+  (elements/pop-elem)
+  (elements/cur-selected-elem))
 
-(defn redo [elem]
-  (elements/push-elem elem))
+;;(defn redo [elem]
+;;  (elements/push-elem elem)
+;;  (elements/cur-selected-elem))
 
 (defn show
   ([f-out mode]
     (case mode
       :list-elements   (f-out (elements/list-elements))
       :list-shapes     (f-out (elements/list-shapes))
-      :elements-stack (f-out (elements/show-elements))
       :selected-elem  (f-out (elements/cur-selected-elem))
-      (f-out "mode" mode "not implemented")))
+      (f-out (apply str (concat "mode " (str mode) " not implemented")))))
   ([mode] (show out mode)))

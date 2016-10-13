@@ -17,7 +17,7 @@
   (sort-points [this pnt-list])
   (cut [this [p q]])
   (transform-points [this f])
-  (form [this]))
+)
 
 
 
@@ -95,10 +95,7 @@
     [])
 
   (transform-points [this f]
-    (assoc this :p (f (:p this)) :p-ref (f (:p-ref this))))
-
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
+    (assoc this :p (f (:p this)) :p-ref (f (:p-ref this)))))
 
 (defn constructPoint [p]
   (construct (->Point p)))
@@ -178,10 +175,7 @@
           :create (constructLine q (:p2 this))])))
 
   (transform-points [this f]
-    (assoc this :p1 (f (:p1 this)) :p2 (f (:p2 this)) :p-ref (f (:p-ref this))))
-
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
+    (assoc this :p1 (f (:p1 this)) :p2 (f (:p2 this)) :p-ref (f (:p-ref this)))))
 
 
 (defn constructLine
@@ -264,10 +258,7 @@
         :create (constructArc (:p-center this)(:radius this)(second points)(first points))]))
 
   (transform-points [this f]
-    (assoc this :p-center (f (:p-center this)) :p-ref (f (:p-ref this))))
-
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
+    (assoc this :p-center (f (:p-center this)) :p-ref (f (:p-ref this)))))
 
 
 (defn constructCircle [p-center radius]
@@ -371,10 +362,7 @@
           :create (constructArc (:p-center this)(:radius this) q (:p-end this))])))
 
   (transform-points [this f]
-    (assoc this :p-center (f (:p-center this)) :p-start (f (:p-start this)) :p-end (f (:p-end this)) :p-ref (f (:p-ref this))))
-
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
+    (assoc this :p-center (f (:p-center this)) :p-start (f (:p-start this)) :p-end (f (:p-end this)) :p-ref (f (:p-ref this)))))
 
 (defn constructArc [p-center radius p-start p-end]
   (construct (->Arc p-center radius p-start p-end)))
@@ -451,10 +439,7 @@
   (transform-points [this f]
     (let [new-p-list (vec (map f p-list))]
       (assoc this :p-list new-p-list
-                  :p-ref (first new-p-list))))
-
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
+                  :p-ref (first new-p-list)))))
 
 (defn constructContour [p-list]
   (construct (->Contour (vec p-list))))
@@ -545,25 +530,15 @@
     [])
 
   (transform-points [this f]
-    (assoc this :elems (vec (map #(transform-points % f) (:elems this))) :p-ref (f (:p-ref this))))
+    (assoc this :elems (vec (map #(transform-points % f) (:elems this))) :p-ref (f (:p-ref this)))))
 
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
 
 (defn constructCompound
   ([elems]
     (construct (->Compound elems)))
   ([elems key val & kvs]
-    (loop [k key
-           v val
-           col kvs
-           ret (constructCompound elems)]
-      (if-not col
-        (assoc ret k v)
-        (if (next col)
-          (recur (first col) (second col) (nnext col) (assoc ret k v))
-          (throw (IllegalArgumentException.
-                  "constructCompound expects even number of arguments; found odd number")))))))
+    (last
+      (map #(assoc (assoc (constructCompound elems) key val) (first %)(second %)) (partition 2 (concat (list key val) kvs))))))
 
 ;; 'text'
 ;;
@@ -618,10 +593,7 @@
     [])
 
   (transform-points [this f]
-    (assoc this :top-left (f (:top-left this)) :bottom-right (f (:bottom-right this)) :p-ref (f (:p-ref this))))
-
-  (form [this]
-    (pr-str (format "def %s" (:name this)) this)))
+    (assoc this :top-left (f (:top-left this)) :bottom-right (f (:bottom-right this)) :p-ref (f (:p-ref this)))))
 
 
 (defn constructText [str top-left bottom-right]

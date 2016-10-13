@@ -7,10 +7,11 @@
 (def drw (#'shapes/constructCompound [] :subtype :drawing :filename "/testfiles/temp.grl"))
 
 
+
 (deftest nrepl-base-test
   (testing "start stop"
     (let [[server f] (user/start)]
-      (is (fn? f))
+      (is (or (nil? f)(fn? f)))
       (is (not (nil? server)))
       (is (not (nil? (user/stop server)))))))
 
@@ -107,10 +108,20 @@
              (#'user/show identity :list-shapes)))
       (is (= cp
              (#'user/show identity :selected-elem)))
+      (is (nil? (#'user/compound "Ln1" 5)))
+      (is (nil? (#'user/compound "Ln1" "Ln7")))
       ))
 
   (deftest settings-test
-    )
+    (is (empty? (#'user/settings)))
+    (is (not (empty? (#'user/settings :1 :2 :3)))))
+
+  (deftest show-test
+    (is (not (nil? (#'user/show identity :selected-elem))))
+    (is (not (nil? (#'user/show identity :list-elements))))
+    (is (= "mode :unknown-mode not implemented"
+           (#'user/show identity :unknown-mode)))
+    (is (nil? (#'user/show :unknown-mode))))
 
   (deftest move-test
     (#'elements/push-elem drw)
@@ -231,26 +242,30 @@
              (set (#'user/show identity :list-shapes))))
     ))
 
-;;  This produces the bottom-element-on-stack-corrupt bug!!!
-;;  (deftest undo-test
-;;    (#'elements/clear)
-;;    (#'elements/push-elem (assoc (shapes/constructCompound []) :subtype :drawing :p-ref [0 0] :filename ""))
-;;    (#'user/undo)
-;;      (is (empty? (#'user/show identity :list-shapes)))
-;;    (#'user/undo)
-;;      (is (empty? (#'user/show identity :list-shapes)))
-;;    (let [p1 (#'user/point [75.0 -75.0])
-;;          l1 (#'user/line [100.0 50.0][50.0 -200.0])
-;;          c1 (#'user/circle [0.0 50.0] 60)
-;;          a1 (#'user/arc [50.0 0.0] 50 [50.0 -50.0][50.0 50.0])
-;;          cmpnd1 (#'user/compound "Ln1" "Cir1" "Pnt1" "Arc1")]
-;;      (is (= 4 (count (#'user/show identity :list-shapes))))
-;;      (#'user/undo)
-;;      (is (= 3 (count (#'user/show identity :list-shapes))))
-;;      (#'user/undo)
-;;      (is (= 2 (count (#'user/show identity :list-shapes))))
-;;      (#'user/undo)
-;;      (is (= 1 (count (#'user/show identity :list-shapes))))
-;;      (#'user/undo)
-;;      (is (empty? (#'user/show identity :list-shapes)))
-;;    ))
+
+  (deftest undo-test
+    (#'elements/clear)
+    (#'elements/push-elem drw)
+    (#'elements/push-elem (assoc (shapes/constructCompound []) :subtype :drawing :p-ref [0 0] :filename ""))
+    (#'user/undo)
+      (is (empty? (#'user/show identity :list-shapes)))
+    (#'user/undo)
+      (is (empty? (#'user/show identity :list-shapes)))
+    (let [d (#'elements/push-elem drw)
+          p1 (#'user/point [75.0 -75.0])
+          l1 (#'user/line [100.0 50.0][50.0 -200.0])
+          c1 (#'user/circle [0.0 50.0] 60)
+          a1 (#'user/arc [50.0 0.0] 50 [50.0 -50.0][50.0 50.0])
+          cmpnd1 (#'user/compound "Ln1" "Cir1" "Pnt1" "Arc1")]
+      (is (= 4 (count (#'user/show identity :list-shapes))))
+      (#'user/undo)
+      (is (= 4 (count (#'user/show identity :list-shapes))))
+      (#'user/undo)
+      (is (= 3 (count (#'user/show identity :list-shapes))))
+      (#'user/undo)
+      (is (= 2 (count (#'user/show identity :list-shapes))))
+      (#'user/undo)
+      (is (= 1 (count (#'user/show identity :list-shapes))))
+      (#'user/undo)
+      (is (empty? (#'user/show identity :list-shapes)))
+    ))

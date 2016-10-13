@@ -1,8 +1,7 @@
 (ns georepl.draw-primitives
   (:require [clojure.core.match :refer [match]]
             [georepl.mathlib :as math]
-            [quil.core :as quil]
-            [quil.middleware :as m]))
+            [georepl.renderer :as renderer]))
 
 
 (def colours {:orange [204 102 0]
@@ -17,65 +16,66 @@
 
 ;; cleanup old drawing before initializing new sketch
 (defn exit[]
-  (quil/exit))
+  (renderer/exit))
 
 ;;
 ;; primitives
 ;;
 (defn- draw-text
   ([s top-left bottom-right]
-    (quil/text s (first top-left)
-                 (second top-left)
-                 (first bottom-right)
-                 (second bottom-right)))
+    (renderer/text s
+                   (first top-left)
+                   (second top-left)
+                   (first bottom-right)
+                   (second bottom-right)))
   ([s top-left bottom-right colour]
     (do
-      (apply quil/fill (colour colours))
+      (apply renderer/fill (colour colours))
       (draw-text s top-left bottom-right)
-      (quil/no-fill))))
-
-
-(defn- draw-name [name p]
-  (let [v [(quil/text-width name) delta-y]]
-    (draw-text name p (math/vec-add p v) :black)))
+      (renderer/no-fill))))
 
 
 (defn text-height [height]
-  (quil/text-size height))
+  (renderer/text-size height))
 
 
 (defn text-width [s]
-  (quil/text-width s))
+  (renderer/text-width s))
 
+
+;; NYI: use text-height instead of delta-y!!!
+(defn- draw-name [name p]
+  (let [v [(text-width name) delta-y]]
+    (draw-text name p (math/vec-add p v) :black)))
 
 (defn draw-str [s x1 y1 x2 y2]
-  (apply quil/fill (:black colours))
-  (quil/text s x1 y1 x2 y2)
-  (quil/no-fill))
+  (apply renderer/fill (:black colours))
+  (renderer/text s x1 y1 x2 y2)
+  (renderer/no-fill))
 
 
 (defn draw-point
   ([p]
-    (when-not (and (coll? p) (>= (count p) 2))
-      (throw (ex-info "argument p must be two- or higher dimensional vector" {:p p :f draw-point})))
-    (quil/ellipse (first p) (second p) 4 4))
+    (if-not (and (coll? p)(= (count p) 2))
+      (apply str (concat "argument " (str p) " must be two-dimensional vector"))
+      (renderer/ellipse (first p) (second p) 4 4)))
   ([p colour]
     (if (coll? colour)
       (do
-        (apply quil/fill colour)
+        (apply renderer/fill colour)
         (draw-point p)
-        (quil/no-fill))
-      (draw-point p [204 102 0])))
+        (renderer/no-fill))
+      (draw-point p (:orange colours))))
   ([p colour size]
     (do
-      (apply quil/fill colour)
-      (quil/ellipse (first p) (second p) size size)
-      (quil/no-fill))))
+      (apply renderer/fill colour)
+      (renderer/ellipse (first p) (second p) size size)
+      (renderer/no-fill))))
 
 
 (defn- draw-line
   ([p q]
-    (quil/line (first p)
+    (renderer/line (first p)
                (second p)
                (first q)
                (second q)))
@@ -93,7 +93,7 @@
           ang2 (if (< angle-start angle-end)
                  angle-end
                  (+ math/TWO-PI angle-end))]
-      (quil/arc (first p-center)
+      (renderer/arc (first p-center)
                 (second p-center)
                 diam
                 diam
@@ -116,7 +116,7 @@
 (defn- draw-circle
   ([p-center radius]
     (let [diam (* radius 2)]
-      (quil/ellipse (first p-center)
+      (renderer/ellipse (first p-center)
                     (second p-center)
                     diam
                     diam)))
@@ -148,7 +148,7 @@
                            (when-let [s (:name elem)]
                              (draw-name s (:p elem)))
                            (draw-point (:p elem)))
-          :line          (draw-line (:p1 elem) (:p2 elem)(:name elem))
+          :line          (draw-line (:p1 elem)(:p2 elem)(:name elem))
           :arc           (draw-arc (:p-center elem)(:radius elem)(:p-start elem)(:p-end elem)(:name elem))
           :circle        (draw-circle (:p-center elem) (:radius elem)(:name elem))
           :text          (draw-text (:str elem) (:top-left elem) (:bottom-right elem) :black)
@@ -163,9 +163,9 @@
   ([elem colour text-visible?]
     (when-let [colvec (colour colours)]
       (when (coll? colvec)
-        (apply quil/stroke colvec)))
+        (apply renderer/stroke colvec)))
     (draw-element elem text-visible?)
-    (apply quil/stroke (:black colours))))
+    (apply renderer/stroke (:black colours))))
 
 
 
@@ -174,11 +174,11 @@
         pnt-tl (:p1 e)
         pnt-br (:p2 e)]
     (when (not (or (nil? pnt-tl)(nil? pnt-br)))
-      (quil/text-size (- (second pnt-br)(second pnt-tl)))
+      (renderer/text-size (- (second pnt-br)(second pnt-tl)))
       (doseq [e sel-coll]
-        (apply quil/fill
+        (apply renderer/fill
                (if (:highlight e)
                  (:orange colours)
                  (:someothercolour colours)))
         (draw-text (:s e) (:p1 e) (:p2 e)))
-      (quil/no-fill))))
+      (renderer/no-fill))))

@@ -135,6 +135,7 @@
 
 
 (defn- main[]
+  (frame/init-renderer :quil)
   (let [size [600 600]
         files (.list (io/file (:drawings-directory config/Configuration)))]
     (if-let [drw-list (select-drawing files size)]

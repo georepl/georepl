@@ -245,7 +245,9 @@
 
 (defn intersect-straight-line-circle [[x1 y1] [x2 y2] [cpx cpy] radius]
   (if (nearly-zero? radius)
-    (on-straight-line? [cpx cpy] [x1 y1] [x2 y2])
+    (if (on-straight-line? [cpx cpy] [x1 y1] [x2 y2])
+      [cpx cpy]
+      [])
     (dedupe
       (let [a (- y1 y2)
             b (- x2 x1)]

@@ -2,29 +2,31 @@
   (:require [clojure.core.match :refer [match]]
             [georepl.mathlib :as math]
             [georepl.draw-primitives :as dp]
-            [quil.core :as quil]
-            [quil.middleware :as m]
+            [georepl.renderer :as renderer]
             [georepl.gui-base :as gui-base]
             [georepl.gallery :as gallery]))
 
+
+(defn init-renderer [key]
+  (renderer/init-renderer key))
 
 ;;
 ;; gui framework functions
 ;;
 (defn- setup-gui []
-  (quil/background 255)
-  (quil/text-size 10)
-  (quil/no-fill)
+  (renderer/background 255)
+  (renderer/text-size 10)
+  (renderer/no-fill)
 
 ;; reduced frame rate for testing purposes
-;(quil/frame-rate 5)
+;(renderer/frame-rate 5)
 
   ; initial state
   (gui-base/init))
 
 
 (defn- draw-gui [state]
-  (quil/background 255)
+  (renderer/background 255)
   (gui-base/draw state))
 
 (defn- key-pressed-gui [state key]
@@ -42,44 +44,42 @@
 ;; main gui
 ;;
 (defn init-frame-gui []
-  (quil/sketch
-    :size [800 800]
-    :features [:resizable]
-    :title "GeoRepl"
-    :setup setup-gui
-    :draw draw-gui
-    :update gui-base/update-frame
-    :mouse-pressed gui-base/mouse-pressed
-    :mouse-released gui-base/mouse-released
-    :mouse-dragged gui-base/mouse-dragged
-    :mouse-moved gui-base/mouse-moved
-    :key-pressed key-pressed-gui
-;    :on-close (gui/wrap gui/on-close)
-    :middleware [m/fun-mode])
-  nil)
+  (renderer/setup
+              [800 800]
+              "GeoRepl"
+              setup-gui
+              gui-base/update-frame
+              draw-gui
+              gui-base/mouse-pressed
+              gui-base/mouse-released
+              gui-base/mouse-dragged
+              gui-base/mouse-moved
+              key-pressed-gui
+              nil    ;;(gui/wrap gui/on-close)
+    ))
 
 
 ;;
 ;; gallery framework functions
 ;;
 (defn- setup-gallery [size drw-list f-on-close]
-  (quil/background 255)
-  (quil/no-fill)
+  (renderer/background 255)
+  (renderer/no-fill)
 
 ;; reduced frame rate for testing purposes
-;(quil/frame-rate 5)
+;(renderer/frame-rate 5)
 
   ; initial state
   (gallery/init size drw-list f-on-close))
 
 
 (defn- draw-gallery [state]
-  (quil/background 255)
+  (renderer/background 255)
   (gallery/draw state))
 
 (defn- update-frame [state]
   (if (true? (:complete state))
-    (quil/exit)
+    (renderer/exit)
     state))
 
 (defn- key-pressed-gallery [state key]
@@ -95,14 +95,14 @@
 ;; main gallery
 ;;
 (defn init-frame-gallery [drw-list f-on-close]
-  (quil/sketch
-    :size [600 600]
-    :title "GeoRepl Gallery - Select A Drawing"
-    :setup (fn [](setup-gallery [600 600] drw-list f-on-close))
-    :draw draw-gallery
-    :update update-frame
-    :mouse-released gallery/mouse-released
-    :mouse-moved gallery/mouse-moved
-    :key-pressed key-pressed-gallery
-    :middleware [m/fun-mode])
-  nil)
+  (renderer/setup  [600 600]
+                   "GeoRepl Gallery - Select A Drawing"
+                   (fn [](setup-gallery [600 600] drw-list f-on-close))
+                   update-frame
+                   draw-gallery
+                   nil
+                   gallery/mouse-released
+                   nil
+                   gallery/mouse-moved
+                   key-pressed-gallery
+                   nil))

@@ -39,17 +39,19 @@
 
 
 (defn key-pressed [this key]
-;(prn "KEY-pressed" this)
   (case key
-    :up     (if-let [sel (dialog/select :up (:selection this))]
-              (assoc this :selection sel)
-              this)
-    :down   (if-let [sel (dialog/select :down (:selection this))]
-              (assoc this :selection sel)
-              this)
-    :ok     (if-let [sel (dialog/select :ok (:selection this))]
-              (assoc this :selection sel)
-              this)
+    :up     (let [sel (dialog/select :up (:selection this))]
+              (if (empty? sel)
+                this
+                (assoc this :selection sel)))
+    :down   (let [sel (dialog/select :down (:selection this))]
+              (if (empty? sel)
+                this
+                (assoc this :selection sel)))
+    :ok     (let [sel (dialog/select :ok (:selection this))]
+              (if (empty? sel)
+                this
+                (assoc this :selection sel)))
     :save   (do
               (gui/save this)
               this)
@@ -67,7 +69,6 @@
 
 
 (defn mouse-pressed [this event]
-;(prn "mouse-pressed:" (:button event) (:show-context? this))
   (let [trace [[(:x event)(:y event)(System/currentTimeMillis)(:button event)]]
         p [(:x event)(:y event)]]
     (if (= :right (:button event))
@@ -85,7 +86,6 @@
 
 
 (defn mouse-released [this event]
-;(prn "mouse-released" (first (:trace this))(:button-released this))
   (if (nil? (:button-released this))
     (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis) (last (first (:trace this)))] (:trace this))
                 :button-released 1)
@@ -94,7 +94,6 @@
 
 
 (defn mouse-dragged[this event]
-;(prn "mouse-dragged")
   (assoc this :trace (cons [(:x event)(:y event)(System/currentTimeMillis)(:button event)] (:trace this))))
 
 
@@ -114,7 +113,6 @@
                      :mouse-moved? mouse-moved?)))
 
 (defn picked [this]
-;(prn "picked" (System/currentTimeMillis))
   (let [p (math/coordinates (first (:trace this)))
         state (gui/picked this p)]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
@@ -126,66 +124,48 @@
 
 
 (defn dashed [this]
-;(prn "dashed" (System/currentTimeMillis))
   (let [state (gui/dashed this (:trace this))]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 (defn snapped [this]
-;(prn "snapped" (first (:trace this))(:mouse-moved? this))
   (let [state (gui/snapped this (math/coordinates (first (:trace this))))]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 (defn dragging [this]
-;(prn "dragging, TraceLen:" (System/currentTimeMillis))
   (gui/dragging this))
 
 (defn dragged [this elem]
-;(prn "dragged" (System/currentTimeMillis))
   (let [state (gui/dragged this (:trace this) elem)]
     (reinit-state this (assoc state :trace [] :mouse-moved? false))))
 
 (defn moved [this]
-;(prn "moved" (System/currentTimeMillis))
   (let [state (gui/moved this (math/coordinates (first (:trace this))))]
     (reinit-state this (assoc state :trace (:trace this)))))
 
-(defn _idle [this x]
-  (when (= x 1)
-;(prn (last (first (:trace this)))
-     (gui/short-trace? (trace-length (:trace this)))
-     (button-down-time-exceeded? (:trace this))
-     (:button-released this)
-     (count (:trace this))
-     x)
-  this)
-
-(defn idle [this x]
- ; (prn "Mark " x (System/currentTimeMillis))
-  this)
 
 (defn update-frame [this]
   (gui/post-update-frame
     (if (:show-context? this)
       (if-let [f (:f-context this)]
         (context f (dissoc this :f-context))
-        (idle this 1))
+        this)
       (if (= :left (last (first (:trace this))))
         (match [(gui/short-trace? (trace-length (:trace this)))
                 (button-down-time-exceeded? (:trace this))]
           [true false]  (if (= 1 (:button-released this))
                           (picked this)
-                          (idle this 2))   ;still drawing ...
+                          this)   ;still drawing ...
           [true  true]  (snapped (assoc this :button-released 0))
           [false _]     (match [(gui/dash-speed? (:trace this))(:button-released this)]
                            [true  1]  (dashed (assoc this :button-released 0))
                            [false 1]  (dragged (assoc this :button-released 0)
                                                   (dialog/current-selection (:selection this)))
                            [false -1] (dragging this)
-                           :else      (idle this 3)   ;still drawing ...
+                           :else      this   ;still drawing ...
                           ))
         (if (and (:mouse-moved? this) (not (empty? (:trace this))))
           (moved (assoc this :mouse-moved? false))
-          (idle (assoc this :mouse-moved? false) 4))))))
+          (assoc this :mouse-moved? false))))))
 
 
 (defn draw [this]

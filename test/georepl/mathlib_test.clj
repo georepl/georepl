@@ -27,7 +27,16 @@
     (is (true? (nearly-zero? -0.0)))
     (is (false? (nearly-zero? -1.0)))
     (is (false? (nearly-zero? (first (drop 16 (iterate (partial * 0.5) 1))))))
-    (is (true? (nearly-zero? (first (drop 17 (iterate (partial * 0.5) 1))))))))
+    (is (true? (nearly-zero? (first (drop 17 (iterate (partial * 0.5) 1)))))))
+  (testing "with explicit tolerance"
+    (is (= (nearly-zero? 0.0)(nearly-zero? 0.0 0)))
+    (is (= (nearly-zero? 0.0001)(nearly-zero? 0.0001 0)))
+    (is (true? (nearly-zero? 0.0 0.0000001)))
+    (is (true? (nearly-zero? 0.00000001 0.0000001)))
+    (is (false? (nearly-zero? 0.0000001 0.0000001)))
+    (is (false? (nearly-zero? 0.000001 0.0000001)))
+    (is (not= (nearly-zero? 0.000001 0.0000001) (nearly-zero? 0.000001)))
+    ))
 
 (deftest equals-test
   (testing "equals? on scalar values"
@@ -208,7 +217,10 @@
 
 (deftest project-circle-test
   (testing "project-circle"
-    (is (= [100.0 50.0] (project-circle [100 10] [100 100] 50)))))
+    (is (= [100 100] (project-circle [100 10] [100 100] 0.0)))
+    (is (= [100 100] (project-circle [100 100] [100 100] 50.0)))
+    (is (= [100.0 50.0] (project-circle [100 10] [100 100] 50)))
+    ))
 
 (deftest det-test
   (testing "det"
@@ -258,9 +270,12 @@
 
 (deftest intersect-circles-test
   (testing "intersect-circles-test"
-    (is (= [](intersect-circles [0 1] 2 [0 1] 2)))
+    (is (= [](intersect-circles [0 1] 0 [0 1] 2)))
+    (is (= [](intersect-circles [0 1] 10000 [0 1] 0.00000001)))
+    (is (   = [](intersect-circles [0 1] 2 [0 1] 2)))
     (is (= [](intersect-circles [0 1] 2 [0 1] 3)))
     (is (= [](intersect-circles [0 1] 2 [0 1] 2)))
+    (is (= [](intersect-circles [0.0 1.0] 2 [0.00000002 1.0] 2)))
     (is (= [](intersect-circles [0 0] 2 [0 1] 0)))
     (is (= [](intersect-circles [6 10] 1 [0 0] 2)))
     (let [[p q](intersect-circles [0 1] 2 [0 -1] 2)]
@@ -323,6 +338,9 @@
     ))
 
 (deftest intersect-straight-line-circle-test
+  (testing "edge-cases"
+    (is (= [0 0] (intersect-straight-line-circle [-10 -10][10 10][0 0] 0)))
+    (is (= [] (intersect-straight-line-circle [-10 -10][10 10][50 -50] 0))))
   (testing "intersect-straight-line-circle: two common points"
     (is (not-any? false? (map equals? [[0.707107 -0.707107][-0.707107 0.707107]] (intersect-straight-line-circle [-0.5 0.5][0.5 -0.5][0.0 0.0] 1.0))))
     (is (not-any? false? (map equals? [[0.707107 0.292893][-0.707107 1.707107]] (intersect-straight-line-circle [-0.5 1.5][0.5 0.5][0.0 1.0] 1.0))))
@@ -370,6 +388,11 @@
   )
 
 (deftest circumcircle-test
+  (testing "edge-case"
+    (is (nil? (circumcircle [5 6][5 6][12 21])))
+    (is (nil? (circumcircle [5 6][17 2][17 2])))
+    (is (nil? (circumcircle [12 21][17 2][12 21])))
+    )
   (testing "circumcircle"
     (let [[p r] (circumcircle [5 6][17 2][12 21])]
       (is (and

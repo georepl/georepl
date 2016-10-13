@@ -264,6 +264,14 @@
     (is (math/equals? [2.0 0.1] (#'freehand/bias [2.5 1.5 2.2 1.8 2.1 1.9])))
     ))
 
+(deftest disjoin-plus-minus-test
+  (is (= [[0][0]] (#'freehand/disjoin-plus-minus nil)))
+  (is (= [[0][0]] (#'freehand/disjoin-plus-minus [])))
+  (is (= ['(1 2 3 4 5)'()] (#'freehand/disjoin-plus-minus [1 2 3 4 5])))
+  (is (= ['(1 2 3 4 5)'()] (#'freehand/disjoin-plus-minus [1 0 2 3 0.0000 4 5])))
+  (is (= ['(4 3 5)'(-1 -2)] (#'freehand/disjoin-plus-minus [4 -1 0 3 -2 5 0.0000])))
+  )
+
 (deftest analyze-straight-line-test
   (testing "analyze-straight-line"
     (is (= :line (:type (#'freehand/analyze-straight-line [[3 10][42 -10]] 10 1000))))
@@ -289,6 +297,10 @@
 
 (deftest analyze-shape-test
   (testing "analyze-shape"
+    (is (nil? (freehand/analyze-shape nil)))
+    (is (nil? (freehand/analyze-shape [])))
+    (is (nil? (freehand/analyze-shape [[]])))
+    (is (nil? (freehand/analyze-shape [[42 15]])))
     (is (= :line (:type (freehand/analyze-shape line1))))
     (is (= :circle (:type (freehand/analyze-shape circle1))))
     (is (= :circle (:type (freehand/analyze-shape circle2))))

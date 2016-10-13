@@ -25,7 +25,8 @@
 ;; e3 x e4 : [[556.690141 513.419845]]
 ;;
 
-
+(deftest out-test
+  (is (nil? (#'elements/out))))
 
 (deftest unique-name-test
   (#'elements/push-elem drw)
@@ -239,23 +240,12 @@
     (#'elements/push-drawing drw nil)
     (is (nil? (#'elements/reinit-repl-server e1))))
   (testing "drawing with unnamed element"
-    (#'elements/register #'user/update-elements)
+;;    (#'elements/register #'user/update-elements)
     (is (nil? (#'elements/reinit-repl-server (dissoc e1 :name)))))
   (testing "repl-form after pushing a shape"
-    (#'elements/register #'user/update-elements)
+;;    (#'elements/register #'user/update-elements)
     (is (nil? (#'elements/reinit-repl-server e2))))
     )
-
-;;(def pnt1 (assoc (#'shapes/constructPoint [2 2]) :name "Pnt1"))
-;;(def pnt2 (assoc (#'shapes/constructPoint [12 2]) :name "Pnt2"))
-;;(def pnt3 (assoc (#'shapes/constructPoint [5 6]) :name "Pnt3"))
-;;(def lne1 (assoc (#'shapes/constructLine [2 2][12 2]) :name "Lne1"))
-;;(def lne2 (assoc (#'shapes/constructLine [12 2][5 6]) :name "Lne2"))
-;;(def lne3 (assoc (#'shapes/constructLine [5 6][2 2]) :name "Lne3"))
-;;(def lne4 (assoc (#'shapes/constructLine [6 0][8 10]) :name "Lne4"))
-;;(def lne5 (assoc (#'shapes/constructLine [2 6][0 12]) :name "Lne5"))
-;;(def cle1 (assoc (#'shapes/constructCircle [7 5] 4) :name "Cle1"))
-;;(def arc1 (assoc (#'shapes/constructArc [11 0] 4 [11 4][0 7]) :name "Arc1"))
 
 (def pnt1 (#'shapes/constructPoint [2 2]))
 (def pnt2 (#'shapes/constructPoint [12 2]))

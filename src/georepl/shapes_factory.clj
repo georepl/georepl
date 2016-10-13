@@ -228,8 +228,8 @@
 ;;
 (defrecord ArcFactory[elem] IShapesFactory
   (create [this]
-    (let [strategies [{:s "start end on points"
-                       :f (fn[state p] (change-strategy state "start end on points"))
+    (let [strategies [{:s "three points (start, end, plus one)"
+                       :f (fn[state p] (change-strategy state "start, end, on points"))
                        :highlight true
                        :quector [{:f (fn[this p]
                                        (if-let [arc (current-element this)]
@@ -283,8 +283,8 @@
                                                                p-s
                                                                p-e))
                                            this)))}]}
-                       {:s "next arc strat"
-                        :f (fn[state p] (change-strategy state "next arc strat"))
+                       {:s "center, start, end points"
+                        :f (fn[state p] (change-strategy state "center, start, end points"))
                         :highlight false
                         :quector [{:f (fn[this p]
 (prn "3 point arc definition, start point")

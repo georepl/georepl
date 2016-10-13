@@ -434,12 +434,9 @@
     this))
 
 
-
-
 ;; framework functions outside of the above interface
 ;;
 (defn init[]
-;(prn "INIT")
   (dp/text-height (:shapes-label-size config/Configuration))
 ;  ((wrap reset-state) (->Modifying [] (modifying-dialog))))
   ((wrap reset-state) (->Drawing [] (drawing-dialog) (attributes))))

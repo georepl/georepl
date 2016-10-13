@@ -163,8 +163,8 @@
         e (shapes/constructArc [80 30] 50 [30 30][130 30])
         fact (shapesfactory/createShapeFactory e)]
     (testing "current-strategy and change-strategy"
-      (is (= "start end on points" (:s (#'shapesfactory/current-strategy fact))))
-      (is (= "next arc strat" (:s (#'shapesfactory/current-strategy (#'shapesfactory/change-strategy fact "next arc strat"))))))
+      (is (= "three points (start, end, plus one)" (:s (#'shapesfactory/current-strategy fact))))
+      (is (= nil (#'shapesfactory/current-strategy (#'shapesfactory/change-strategy fact "next arc strat")))))
     (testing "next-question"
       (let [f (get-in (#'shapesfactory/next-question fact 0) [0 :quector 0 :f])]
         (is (math/equals? [80 30] (get-in (f fact [10 20]) [:elem :p-center])))
@@ -200,14 +200,14 @@
     (testing "current-question"
       (let [state (shapesfactory/current-question fact [42.0 17.0])]
         (is (fn? (get-in state [:strategies 0 :f])))
-        (is (= "start end on points" (get-in state [:strategies 0 :s])))
+        (is (= "three points (start, end, plus one)" (get-in state [:strategies 0 :s])))
         (is (fn? (get-in state [:strategies 0 :quector 0 :f])))
         (is (fn? (get-in state [:strategies 0 :quector 0 :g])))
         (is (fn? (get-in state [:strategies 0 :quector 1 :f])))
         (is (fn? (get-in state [:strategies 0 :quector 1 :g])))
         (is (fn? (get-in state [:strategies 0 :quector 2 :f])))
         (is (fn? (get-in state [:strategies 0 :quector 2 :g])))
-        (is (= "next arc strat" (get-in state [:strategies 1 :s])))
+        (is (= "center, start, end points" (get-in state [:strategies 1 :s])))
         (is (fn? (get-in state [:strategies 1 :quector 0 :f])))
         (is (fn? (get-in state [:strategies 1 :quector 0 :g])))
         (is (fn? (get-in state [:strategies 1 :quector 1 :f])))

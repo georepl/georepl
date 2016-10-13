@@ -43,6 +43,13 @@
 ;; e3 x e4 : [[556.690141 513.419845]]
 
 
+(deftest on-element-test
+  (is (= [10 10] (on-element [10 10] (constructPoint [10 10]))))
+  (is (nil? (on-element [20 20] (constructPoint [10 10]))))
+  (is (nil? (on-element [20 20] {:type :none})))
+  )
+
+
 (def drw (constructCompound [] :subtype :drawing :filename "/testfiles/temp.grl"))
 
 (deftest point-test
@@ -98,18 +105,15 @@
         (is (math/equals? (:p e2)(:p-ref e2)))))
 
     (testing "intersect"
-      (let [e2 (scale-ref e1 [50 50] 0.5)]
-        (is (= :point    (:type e2)))
-        (is (= 1         (:visible e2)))
-        (is (math/equals? [75 75] (:p-ref e2)))
-        (is (math/equals? (:p e2)(:p-ref e2))))
       (let [pts (apply concat
                   (map (partial intersect Pnt5) [Pnt1 Pnt2 Pnt3 Pnt4 Lin1 Lin2 Lin3 Cir1 Cir2 Arc1]))]
         (is (not-any? false? (map math/equals? pts [[-1 -1]]))))
-      )
+      (is (= [[0.0 10.0]] (intersect (constructPoint [0.0 10.0]) (constructCircle [0.0 0.0] 10.0))))
+      (is (= [[0.0 10.0]] (intersect (constructPoint [0.0 10.0]) (constructArc [0.0 0.0] 10.0 [10.0 0.0][-10.0 0.0])))))
 
     (testing "between?"
-      (is (between? e1 [100 100][100 100][100 100]))
+      (is (true?  (between? e1 [100 100][100 100][100 100])))
+      (is (false? (between? e1 [90 100][100 100][100 100])))
       (is (false? (between? e1 [100 100][100 100][90 100])))
       (is (false? (between? e1 [90 100][100 100][90 100])))
       )
@@ -138,14 +142,7 @@
             f3 (partial math/mirror-point [-10 -10][10 10])]
         (is (= e1 (transform-points e1 f1)))
         (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
-        (is (= (constructPoint [10.0 7.0]) (transform-points (constructPoint [7.0 10.0]) f3)))))
-
-
-    ;;    (testing "form"
-;;      (let [e2 (constructPoint [42 43])
-;;            e3 (assoc e2 :name "test")]
-;;        (is (= "test" (form e3)))))
-    ))
+        (is (= (constructPoint [10.0 7.0]) (transform-points (constructPoint [7.0 10.0]) f3)))))))
 
 
 (deftest line-test
@@ -259,11 +256,7 @@
             f3 (partial math/mirror-point [-10 -10][10 10])]
         (is (= e1 (transform-points e1 f1)))
         (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
-        (is (= (constructLine [10.0 7.0][10.0 -30.0]) (transform-points (constructLine [7.0 10.0][-30.0 10.0]) f3)))))
-
-;;    (testing "form"
-;;      ())
-))
+        (is (= (constructLine [10.0 7.0][10.0 -30.0]) (transform-points (constructLine [7.0 10.0][-30.0 10.0]) f3)))))))
 
 
 (deftest circle-test
@@ -358,8 +351,7 @@
       (is (= [] (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]])))
       (let [cir0 (constructCircle [0 0] 1)]
         (is (= [[0 1][-1 0][0 -1][1 0]] (sort-points cir0 [[0 1][0 -1][1 0][-1 0]])))
-        )
-      )
+        ))
 
     (testing "cut"
       (let [e2 (constructCircle [0 0] 1)]
@@ -383,11 +375,7 @@
             f3 (partial math/mirror-point [-10 -10][10 10])]
         (is (= e1 (transform-points e1 f1)))
         (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
-        (is (= (constructCircle [10.0 7.0] 42) (transform-points (constructCircle [7.0 10.0] 42) f3)))))
-
-;;    (testing "form"
-;;      ())
-    ))
+        (is (= (constructCircle [10.0 7.0] 42) (transform-points (constructCircle [7.0 10.0] 42) f3)))))))
 
 
 (deftest arc-test
@@ -490,14 +478,18 @@
     ))
 
     (testing "between?"
-      (is (between? e1 [200 300][300 200][200 300]))
+      (is (true? (between? e1 [200 300][300 200][200 300])))
       (is (false? (between? e1 [200 300][300 200][100 200])))
       (let [e2 (constructArc [200 200] 100 [300 200] [100 200])]
-        (is (between? e2 [200 300][300 200][100 200])))
+        (is (true? (between? e2 [200 300][300 200][100 200]))))
       (is (false? (between? e1 [310 200][200 100][200 300])))
       (is (false? (between? e1 [200 300][310 200][100 200])))
       (is (false? (between? e1 [200 300][300 200][110 200])))
-      (is (false? (between? e1 [200 100][300 200][200 300]))))
+      (is (false? (between? e1 [200 100][300 200][200 300])))
+      (is (false? (between? e1 [200 100][300 200][300 200])))
+      (is (true?  (between? (constructArc [0.0 0.0] 10.0 [0.0 -10.0][-10.0 0.0]) [0.0 10.0][0.0 -10.0][-10.0 0.0])))
+      (is (false? (between? (constructArc [0.0 0.0] 10.0 [-10.0 0.0][0.0 -10.0]) [0.0 10.0][-10.0 0.0][0.0 -10.0]))))
+
 
     (testing "points"
       (is (not-any? false? (map math/equals? (sort (points e1))(sort [[300 200] [200 300]])))))
@@ -530,11 +522,7 @@
             f3 (partial math/mirror-point [-10 -10][10 10])]
         (is (= e1 (transform-points e1 f1)))
         (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
-        (is (= (constructArc [10.0 7.0] 42.0 [52.0 7.0][-32.0 7.0]) (transform-points (constructArc [7.0 10.0] 42.0 [7.0 52.0][7.0 -32.0]) f3)))))
-
-;;    (testing "form"
-;;      ())
-    ))
+        (is (= (constructArc [10.0 7.0] 42.0 [52.0 7.0][-32.0 7.0]) (transform-points (constructArc [7.0 10.0] 42.0 [7.0 52.0][7.0 -32.0]) f3)))))))
 
 
 
@@ -607,7 +595,13 @@
           (is (= (count (:p-list e1))(count (:p-list e3))))
           (is (every? true? (map math/equals? [[2.5 0.0] [3.0 1.0] [3.5 0.0]] (:p-list e3)))))))
 
+
+    (testing "intersect"
+      (is (empty? (intersect e1 (constructLine [400 350][250 60]))))
+      (is (empty? (intersect e0 e1))))
+
     (testing "between?"
+      (is (false? (between? e0 [42 43][0 8][15 4711])))
       (is (false? (between? e1 [42 43][0 8][15 4711]))))
 
     (testing "points"
@@ -617,9 +611,11 @@
       (nil? (name-prefix e1)))
 
     (testing "sort-points"
+      (is (empty? (sort-points e0 [[30 100][47 11][47 12][120 110][110 101]])))
       (is (empty? (sort-points e1 [[30 100][47 11][47 12][120 110][110 101]]))))
 
     (testing "cut"
+      (is (empty? (cut e0 [[0 0][42 42]])))
       (is (empty? (cut e1 [[0 0][42 42]]))))
 
     (testing "transform-points"
@@ -628,11 +624,7 @@
             f3 (partial math/mirror-point [-10 -10][10 10])]
         (is (= e1 (transform-points e1 f1)))
         (is (= (translate e1 [50 -30]) (transform-points e1 f2)))
-        (is (= (constructContour [[10.0 7.0][12.0 8.0][8.0 10.0]]) (transform-points (constructContour [[7.0 10.0] [8.0 12.0][10.0 8.0]]) f3)))))
-
-;;    (testing "form"
-;;      ())
-    ))
+        (is (= (constructContour [[10.0 7.0][12.0 8.0][8.0 10.0]]) (transform-points (constructContour [[7.0 10.0] [8.0 12.0][10.0 8.0]]) f3)))))))
 
 
 (deftest compound-test
@@ -667,6 +659,28 @@
        (is (= 0         (:visible e0)))
        (is (empty? (:p-ref e0)))))
 
+    (testing "constructCompound with optional key values"
+      (is (= (constructCompound [] :anykey :foo :anyotherkey :buz)
+             (constructCompound [] :anykey :foo :anyotherkey :buz :keywithoutvalue)))
+      (is (= #georepl.shapes.Compound
+                     {:elems
+                        [
+                          #georepl.shapes.Line{:p1 [2.0 4.0], :p2 [9.0 11.0], :type :line, :visible 1, :p-ref [2.0 4.0]}
+                          #georepl.shapes.Line{:p1 [-6.0 6.0], :p2 [14.0 11.0], :type :line, :visible 1, :p-ref [-6.0 6.0]}
+                          #georepl.shapes.Circle{:p-center [6.0 10.0], :radius 1.0, :type :circle, :visible 1, :p-ref [6.0 10.0]}
+                          #georepl.shapes.Arc{:p-center [5.0 8.0], :radius 2.0, :p-start [7.0 8.0], :p-end [5.0 6.0], :type :arc, :visible 1, :p-ref [7.0 8.0]}
+                        ], :type :compound, :subtype :drawing,  :anykey :none, :visible 0, :p-ref [2.0 4.0]}
+             (constructCompound [Lin1 Lin2 Cir1 Arc1] :subtype :drawing :anykey :none)))
+      (is (= #georepl.shapes.Compound
+                     {:elems
+                        [
+                          #georepl.shapes.Line{:p1 [2.0 4.0], :p2 [9.0 11.0], :type :line, :visible 1, :p-ref [2.0 4.0]}
+                          #georepl.shapes.Line{:p1 [-6.0 6.0], :p2 [14.0 11.0], :type :line, :visible 1, :p-ref [-6.0 6.0]}
+                          #georepl.shapes.Circle{:p-center [6.0 10.0], :radius 1.0, :type :circle, :visible 1, :p-ref [6.0 10.0]}
+                          #georepl.shapes.Arc{:p-center [5.0 8.0], :radius 2.0, :p-start [7.0 8.0], :p-end [5.0 6.0], :type :arc, :visible 1, :p-ref [7.0 8.0]}
+                        ], :type :compound, :subtype :drawing, :visible 0, :p-ref [2.0 4.0]}
+             (constructCompound [Lin1 Lin2 Cir1 Arc1] :subtype :drawing))))
+
     (testing "next-point"
       (let [[e2 p d] (next-point e1 [210 210])]
         (is (= :point (:type e2)))
@@ -691,6 +705,8 @@
         (is (math/equals? [350 170] (:p-ref (first (reverse (butlast (:elems e2)))))))))
 
     (testing "rotate-all"
+      (is (= c1 (rotate-all c1 [-100 150] math/PI)))
+      (is (= {} (rotate-all {} [-100 150] math/PI)))
       (let [e2 (rotate-all e1 [-100 150] math/PI)]
         (is (math/equals? [-350 50] (:p-ref e2)))
         (is (math/equals? [-350 50] (:p-ref (first (:elems e2)))))
@@ -715,6 +731,8 @@
         (is (math/equals? [390 850] (:p-ref (first (reverse (butlast (:elems e2)))))))))
 
     (testing "scale-all"
+      (is (= c1 (scale-all c1 [250 400] 1.5)))
+      (is (= {} (scale-all {} [250 400] 1.5)))
       (let [e2 (scale-all e1 [250 400] 1.5)]
         (is (math/equals? [100 175] (:p-ref e2)))
         (is (math/equals? [100 175] (:p-ref (first (:elems e2)))))
@@ -732,7 +750,7 @@
 
     (testing "intersect"
       (let [Drw1 (constructCompound [Lin1 Lin2 Cir1 Arc1] :subtype :drawing)
-        pts1 (intersect Drw1 Drw1)]
+            pts1 (intersect Drw1 Drw1)]
         (is (not-any? false? (map math/equals? (sort pts1) (sort [[3.016201 8.254050][4.177124 6.177124][5.0 10.0][6.0 9.0][6.470588 9.117647][6.6 9.2][6.630858 9.157714][6.822876 8.822876][7.333333 9.333333]])))))
       (let [Drw2 (constructCompound [Lin3 Pnt2 Lin2 Cir2 Pnt1] :subtype :drawing)
             pts2 (intersect Drw2 Drw2)]
@@ -779,11 +797,7 @@
               a2 (constructArc [450.0 200.0] 30 [450.0 230.0][480.0 200.0])
               cnt2 (constructContour [[350.0 100.0][450.0 50.0][400.0 150.0][350.0 200.0]])
               e2 (constructCompound [p2 l2 c2 a2 cnt2])]
-                (is (= e2 (transform-points e1 f3))))))
-
-;;    (testing "form"
-;;      ())
-    ))
+                (is (= e2 (transform-points e1 f3))))))))
 
 
 
