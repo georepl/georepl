@@ -435,9 +435,9 @@
         (is (math/equals? (:p-ref e2) (:p-start e2)))
         (is (math/equals? (:radius e1) (:radius e2)))
         (is (math/right-from? (:p-end e2)(:p-start e2)(:p-center e2)))
-        (is (math/equals? (:p-center e1) (:p-center e2)))
-        (is (math/equals? [200 300] (:p-start e2)))
-        (is (math/equals? [100 200] (:p-end e2)))))
+        (is (math/equals? [300 100] (:p-center e2)))
+        (is (math/equals? [300 200] (:p-start e2)))
+        (is (math/equals? [200 100] (:p-end e2)))))
 
     (testing "rotate-ref"
       (let [e2 (rotate-ref e1 [300 300] math/PI)]

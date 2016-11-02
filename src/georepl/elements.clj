@@ -48,7 +48,7 @@
 (defn list-elements []
   (:elems (:drw-elem (tos))))
 
-(defn- find-element-by-name [name]
+(defn find-element-by-name [name]
   (if (nil? name)
     nil
     (->> (list-elements)
@@ -187,8 +187,8 @@
                     (format "%s%d" prefix))]
        name))
   ([prefix]
-    (unique-name prefix (map #(:name %) (list-shapes)))))
-
+;;    (unique-name prefix (map #(:name %) (list-shapes)))))
+    (unique-name prefix (map #(:name %) (list-elements)))))
 
 
 ;; multiple push and pop operations in one transition

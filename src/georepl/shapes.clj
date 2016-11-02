@@ -296,9 +296,12 @@
 
   (rotate [this angle]
     (-> this
-      (assoc :p-start (math/vec-rotate p-start p-center angle)
-             :p-end (math/vec-rotate p-end p-center angle)
-             :p-ref (math/vec-rotate (:p-ref this) p-center angle))))
+      (assoc :p-start (math/vec-rotate p-start (:p-ref this) angle)
+             :p-end (math/vec-rotate p-end (:p-ref this) angle)
+             :p-center (math/vec-rotate p-center (:p-ref this) angle))))
+;;      (assoc :p-start (math/vec-rotate p-start p-center angle)
+;;             :p-end (math/vec-rotate p-end p-center angle)
+;;             :p-ref (math/vec-rotate (:p-ref this) p-center angle))))
 
   (rotate-ref [this p-r angle]
     (assoc this :p-center (math/vec-rotate (:p-center this) p-r  angle)

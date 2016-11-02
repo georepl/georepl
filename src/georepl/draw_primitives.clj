@@ -101,14 +101,13 @@
                 ang2)))
   ([p-center radius p-start p-end name]
     (when (not (nil? name))
-      (let [br? (math/right-from? p-center p-end p-start)
-            p-s (if br? p-start p-end)
-            p-e (if br? p-end p-start)
-            v (math/vec-sub p-s p-center)
-            w (math/vec-sub p-e p-center)
-            hp (math/vec-add p-center (math/vec-add v w))
-            fct (/ (+ 10 radius)(max 1 (math/length (math/vec-sub hp p-center))))
-            p (math/vec-scale p-center hp fct)]
+      (let [q (math/vec-add p-start (math/vec-scal-mult 0.5 (math/vec-sub p-end p-start)))
+            v (if (math/right-from? p-center p-end p-start)
+                (math/vec-sub q p-center)
+                (math/vec-sub p-center q))
+            v-len (math/length v)
+            fct (/ (+ 10 radius)(max 1 (math/length v)))
+            p (math/vec-add p-center (math/vec-scal-mult fct v))]
         (draw-name name p)))
     (draw-arc p-center radius p-start p-end)))
 

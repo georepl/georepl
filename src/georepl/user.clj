@@ -28,6 +28,8 @@
     (assoc elem :elems (vec (map decolour (:elems elem))))
     (dissoc elem :colour)))
 
+
+
 (defn select [name]
   (elements/select-elem name))
 
@@ -167,9 +169,19 @@
       nil)
     nil))
 
+(defn cut []
+  )
+
+(defn change [& keyvals]
+  (let [elem (elements/cur-selected-elem)
+        newelem (apply (partial assoc elem) keyvals)]
+    (elements/update-elements [:delete elem :create newelem])
+    (select (:name newelem))))
+
 (defn undo []
   (elements/pop-elem)
-  (elements/cur-selected-elem))
+;;  (elements/cur-selected-elem)
+  nil)
 
 ;;(defn redo [elem]
 ;;  (elements/push-elem elem)
@@ -178,8 +190,11 @@
 (defn show
   ([f-out mode]
     (case mode
-      :list-elements   (f-out (elements/list-elements))
-      :list-shapes     (f-out (elements/list-shapes))
+      :list-elements  (f-out (elements/list-elements))
+      :list-shapes    (f-out (elements/list-shapes))
       :selected-elem  (f-out (elements/cur-selected-elem))
-      (f-out (apply str (concat "mode " (str mode) " not implemented")))))
-  ([mode] (show out mode)))
+      (if-let [selem (elements/find-element-by-name mode)]
+        (f-out selem)
+        (f-out (apply str (concat "mode " (str mode) " not implemented"))))))
+;  ([mode] (show out mode)))
+  ([mode] (show identity mode)))

@@ -6,7 +6,8 @@
             [georepl.mathlib :as math]
             [georepl.elements :as elements]
             [georepl.user :as user]
-            [georepl.configuration :as config]))
+            [georepl.configuration :as config])
+  (:gen-class))
 
 
 ;; read drawing from a file
@@ -134,7 +135,7 @@
         (user/start)))))
 
 
-(defn- main[]
+(defn -main [& args]
   (frame/init-renderer :quil)
   (let [size [600 600]
         files (.list (io/file (:drawings-directory config/Configuration)))]
@@ -145,4 +146,4 @@
 
 
 ;; start the show ...
-(main)
+;(-main)

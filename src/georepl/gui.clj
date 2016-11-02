@@ -176,7 +176,7 @@
     this)
 
   (picked [this p]
-(prn "Drawing picked!")
+;(prn "Drawing picked!")
     (let [q (conj p nil)]
       (dragged this [q q] nil)))
 
@@ -193,7 +193,7 @@
   ;; remove the previously drawn element and return to initial drawing mode
   (dashed [this trace]
     (let [todos (cut-elements (math/coordinates (first trace))(math/coordinates (last trace))(elements/list-shapes)(elements/list-points))]
-(prn "Drw. dashed, todos empty?:" (empty? todos))
+;(prn "Drw. dashed, todos empty?:" (empty? todos))
       (if (empty? todos)
         (if-let [e (elements/pop-elem)]
           ((wrap reset-state)
@@ -227,7 +227,6 @@
 
   (context [this f]
 ;(prn "Drawing context" (:selection this)(count (:trace this)))
-(prn "Drawing context")
     (f this (math/coordinates (first (:trace this)))))
 
   (moved [this p]
@@ -301,7 +300,7 @@
       (picked this p)))
 
   (dashed [this trace]
-(prn "Creating dashed:")
+;(prn "Creating dashed:")
     ((wrap reset-state)
       (->Drawing (:redo-stack this)
                  (:selection-save this)
@@ -336,11 +335,11 @@
 ;; mofifications mode
 ;;
 (defn- create-compound [this p]
-(prn "create compound")
+;(prn "create compound")
   this)
 
 (defn- select-elements [state p]
-(prn "select-elements")
+;(prn "select-elements")
   state)
 
 (defn- drawing-mode [this p]
@@ -399,7 +398,7 @@
   ;; 2. undo otherwise
   (dashed [this trace]
     (let [todos (cut-elements (math/coordinates (first trace))(math/coordinates (last trace))(elements/list-shapes)(elements/list-points))]
-(prn "Mod. dashed:" (count todos))
+;(prn "Mod. dashed:" (count todos))
       (if (empty? todos)
         (if-let [e (elements/pop-elem)]
           ((wrap reset-state)

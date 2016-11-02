@@ -121,7 +121,8 @@
     (is (not (nil? (#'user/show identity :list-elements))))
     (is (= "mode :unknown-mode not implemented"
            (#'user/show identity :unknown-mode)))
-    (is (nil? (#'user/show :unknown-mode))))
+    (is (= "mode :unknown-mode not implemented"
+           (#'user/show :unknown-mode))))
 
   (deftest move-test
     (#'elements/push-elem drw)
@@ -242,6 +243,16 @@
              (set (#'user/show identity :list-shapes))))
     ))
 
+
+  (deftest change-test
+    (#'elements/push-elem drw)
+    (let [p1 (#'user/point [75.0 -75.0])
+          l1 (#'user/line [100.0 50.0][50.0 -200.0])
+          c1 (#'user/circle [0.0 50.0] 60)
+          a1 (#'user/arc [50.0 0.0] 50 [50.0 -50.0][50.0 50.0])]
+      (#'user/select "Ln1")
+      (is (= (assoc l1 :p1 [0.0 100.0] :p2 [100.0 0.0] :name "Buz15")
+             (#'user/change :p1 [0.0 100.0] :p2 [100.0 0.0] :name "Buz15")))))
 
   (deftest undo-test
     (#'elements/clear)

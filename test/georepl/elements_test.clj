@@ -216,7 +216,8 @@
   (is (nil? (:selected-elem (#'elements/select-elem "E42"))))
   (is (= #georepl.shapes.Line{:p1 [224 42], :p2 [224 24], :type :line, :visible 1, :p-ref [224 42], :name "E5"}
          (#'elements/select-elem "E5")))
-  (#'elements/push-elem (assoc (#'shapes/constructCompound [e1 e4 e5]) :name "Test42")))
+  (#'elements/push-elem (assoc (#'shapes/constructCompound [e1 e4 e5]) :name "Test42"))
+  (is (not= nil (#'elements/select-elem "Test42"))))
 
 (deftest persistance-test
   (testing "create an empty drawing"
